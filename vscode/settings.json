@@ -1,0 +1,10 @@
+{
+"tailwindCSS.includeLanguage":{
+"jsx": "javascript",
+"tsx": "typescript"
+},
+"tailwindCSS.experimental.classRegex":[
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^\"`]*)(?:'|\"|`)"],
+["tw\\s*`([^`]*)`"]
+]
+}

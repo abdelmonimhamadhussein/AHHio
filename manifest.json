@@ -1,0 +1,23 @@
+{
+"name": "AHHio-متجر الكتروني",
+"short_name": "AHHio",
+"start_url": "/",
+"display": "standalone",
+"background": "#ffffff",
+"theme_color": "#f97316",
+"lang": "ar",
+"dir": "rtl",
+"icons" : [
+{
+    "src": "/icon-192.png",
+    "size" : "192x192",
+    "type": "imge/png"
+},
+{
+    "src": "/icon-512.png",
+    "size": "512x512",
+    "type":"imge/png",
+    "purpose":"any maskable"
+}
+]
+}
