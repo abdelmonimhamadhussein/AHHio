@@ -43,7 +43,7 @@ export default function SignIn() {
                     required
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500"
+                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500 text-black"
                     placeholder="الايميل"
                     />
                   </div>
@@ -55,7 +55,7 @@ export default function SignIn() {
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500"
+                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500 text-black"
                     placeholder="كلمة المرور"
                     />
                   </div>

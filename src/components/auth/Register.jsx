@@ -51,7 +51,7 @@ export default function Register() {
                     required
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500"
+                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500 text-black"
                     placeholder="الاسم كامل"
                     />
                 </div>
@@ -63,7 +63,7 @@ export default function Register() {
                     required
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500"
+                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500 black"
                     placeholder="الايميل"
                     />
                   </div>
@@ -75,7 +75,7 @@ export default function Register() {
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500"
+                    className="w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500 text-black"
                     placeholder="6 احرف علي الاقل"
                     />
                   </div>
