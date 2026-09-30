@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AHHio
 
-## Getting Started
+AHHio is an Arabic, RTL marketplace built with React, Vite, and Supabase.
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 20 or newer
+- npm
+- A Supabase project
+
+## Local development
+
+Create a `.env.local` file in the project root:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Use the Supabase anon/publishable key only. Never expose a service-role key in a `VITE_` variable.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Production build
 
-## Learn More
+```bash
+npm run build
+npm run preview
+```
 
-To learn more about Next.js, take a look at the following resources:
+Vite writes the production site to `dist/`. Vercel can deploy this repository with the Vite preset, `npm run build` as the build command, and `dist` as the output directory. The rewrite in `vercel.json` supports React Router routes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel for every environment you deploy (Preview and Production).
+2. Run `supabase/rls.sql` in the Supabase SQL Editor.
+3. Set the production site URL and allowed authentication redirect URLs in Supabase Auth settings.
+4. Verify customer and vendor registration, checkout, and order status updates against the deployed project before opening traffic.

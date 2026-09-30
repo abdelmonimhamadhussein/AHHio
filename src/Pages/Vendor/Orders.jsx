@@ -41,14 +41,14 @@ export default function VendorOrders() {
   }, []);
 
   const updateStatus = async (orderId, status) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.id) return;
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", orderId)
-      .eq("tenant_id", vendor?.id);
-    if (error) return;
+    const { error } = await supabase.rpc("update_order_status", {
+      target_order: orderId,
+      new_status: status,
+    });
+    if (error) {
+      alert(error.message);
+      return;
+    }
     setOrders((currentOrders) =>
       currentOrders.map((order) => (order.id === orderId ? { ...order, status } : order))
     );

@@ -32,7 +32,7 @@ export default function Navbar() {
           <Link to='/' className='text-sm font-medium text-sky-50 transition hover:text-white'>الرئيسية</Link>
           <Link to='/shop' className='text-sm font-medium text-sky-50 transition hover:text-white'>المتجر</Link>
           <Link to='/plans' className='text-sm font-medium text-sky-50 transition hover:text-white'>الباقات</Link>
-          <Link to='/vendor/register' className='text-sm font-medium text-emerald-100 transition hover:text-white'>بيع معنا</Link>
+          <Link to='/vendor' className='text-sm font-medium text-emerald-100 transition hover:text-white'>دخول التجار</Link>
         </div>
 
         <div className='flex items-center gap-4'>
@@ -66,7 +66,7 @@ export default function Navbar() {
           ) : (
             <div className='flex gap-2'>
               <Link to='/Login' className='rounded border border-white/40 px-3 py-1.5 text-sm font-medium text-white'>دخول</Link>
-              <Link to='/Register' className='rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white'>تسجيل</Link>
+              <Link to='/register' className='rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white'>إنشاء حساب</Link>
             </div>
           )}
         </div>

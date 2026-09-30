@@ -76,88 +76,31 @@ export default function Renew() {
         return;
       }
 
-      showMessage("جارٍ التحقق من رقم العملية...", "info");
-
-      const { data: existing } = await supabase
-        .from("renew_requests")
-        .select("id")
-        .eq("transaction_no", trx)
-        .maybeSingle();
-
-      if (existing) {
-        showMessage("رقم العملية مستخدم من قبل", "error");
-        return;
-      }
-
       showMessage("جارٍ رفع صورة الإيصال...", "info");
 
-      const fileName = `${user.id}/${Date.now()}.jpg`;
+      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const fileName = `${user.id}/${crypto.randomUUID()}.${extension}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("receipts")
+        .from("payment_proofs")
         .upload(fileName, file, { upsert: false });
 
       if (uploadError || !uploadData?.path) {
         throw uploadError || new Error("فشل رفع الإيصال");
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("receipts")
-        .getPublicUrl(uploadData.path);
-
-      const imageUrl = publicUrlData?.publicUrl;
-      if (!imageUrl) {
-        throw new Error("تعذر الحصول على رابط الإيصال");
-      }
-
-      const { error: requestError } = await supabase
-        .from("renew_requests")
-        .insert({
-          tenant_id: tenantId,
-          vendor_id: user.id,
-          transaction_no: trx,
-          screenshot_url: imageUrl,
-        });
+      const { error: requestError } = await supabase.from("payment_transactions").insert({
+        tenant_id: tenantId,
+        requested_plan_id: plan.id,
+        txn_number: trx,
+        amount: plan.price,
+        screenshot_url: uploadData.path,
+        status: "pending",
+        auto_verified: false,
+      });
 
       if (requestError) throw requestError;
 
-      const { data: oldSubscription } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .maybeSingle();
-
-      let base = new Date();
-      if (oldSubscription?.end_date) {
-        const currentEnd = new Date(oldSubscription.end_date);
-        if (!Number.isNaN(currentEnd.getTime()) && currentEnd > base) {
-          base = currentEnd;
-        }
-      }
-
-      base.setDate(base.getDate() + 30);
-
-      const { error: subscriptionError } = await supabase
-        .from("subscriptions")
-        .upsert(
-          {
-            tenant_id: tenantId,
-            vendor_id: user.id,
-            status: "active",
-            end_date: base.toISOString(),
-            rent_amount: plan.price,
-          },
-          { onConflict: "tenant_id" }
-        );
-
-      if (subscriptionError) throw subscriptionError;
-
-      const { error: planError } = await supabase.from("tenants").update({ plan: plan.id }).eq("owner_id", user.id);
-      if (planError) throw planError;
-
-      showMessage("تم تجديد الاشتراك بنجاح، جارٍ redirect...", "success");
-      window.setTimeout(() => {
-        window.location.href = "/";
-      }, 1200);
+      showMessage("تم إرسال طلب التجديد للمراجعة. سيُحدّث الاشتراك بعد موافقة الإدارة.", "success");
     } catch (error) {
       console.error(error);
       showMessage(error.message || "حدث خطأ أثناء تجديد الاشتراك", "error");

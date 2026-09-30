@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function VendorLogin() {
   const [email, setEmail] = useState("");
@@ -47,6 +47,9 @@ export default function VendorLogin() {
       <button onClick={handleLogin} disabled={loading} className="w-full rounded-xl bg-sky-500 py-3 text-white hover:bg-sky-600">
         {loading ? "...جاري الدخول" : "دخول"}
       </button>
+      <p className="mt-4 text-center text-sm text-slate-600">
+        ليس لديك حساب تاجر؟ <Link to="/register?type=vendor" className="font-bold text-sky-700">سجّل متجرك</Link>
+      </p>
     </div>
   );
 }

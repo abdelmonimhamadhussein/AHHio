@@ -69,14 +69,13 @@ export default function SignIn() {
                   </button>
                 </form>
 
-                <p className="text-center mt-4 text-gray-600">
-                    ما عندك حساب؟
-                    <Link to="/register" className="text-blue-600 font-bold">انشئ حساب</Link>
-                </p>
-
+              <p className="mt-4 text-center text-gray-600">
+                ليس لديك حساب؟
+                <Link to="/register" className="font-bold text-sky-600">إنشاء حساب</Link>
+              </p>
             <p className="text-center mt-2 text-gray-600">
-                عايز تكون تاجر؟
-                <Link to="/vendor/register" className="font-bold text-sky-600">سجل كتاجر</Link>
+                حساب تاجر؟
+                <Link to="/vendor" className="font-bold text-sky-600">دخول التجار</Link>
             </p>
             </div>
         </div>

@@ -49,7 +49,7 @@ export default function Home() {
               <h1 className="text-4xl font-black md:text-5xl">متجرك الرقمي يبدأ من هنا</h1>
               <p className="mt-4 text-base text-white/80">أكبر منصة للتجار المحليين في السودان، مع اشتراكات مرنة وطلبات سريعة.</p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link to="/vendor/register" className="rounded-full bg-[#E91E63] px-6 py-3 font-bold text-white">ابدأ بيعك الآن</Link>
+                <Link to="/vendor" className="rounded-full bg-[#E91E63] px-6 py-3 font-bold text-white">دخول التجار</Link>
                 <Link to="/shop" className="rounded-full border border-white/35 bg-white/5 px-6 py-3 font-bold text-white">تصفح المتاجر</Link>
               </div>
             </div>

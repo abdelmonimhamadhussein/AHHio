@@ -57,10 +57,12 @@ export default function AdminOrders() {
 
 {/* دالة تحديث الحالة*/}
     const updateStatus = async (orderId, newStatus) => {
-const {error} = await supabase.from('orders').update({status: newStatus})
-.eq('id', orderId)
+const {error} = await supabase.rpc('update_order_status', {
+    target_order: orderId,
+    new_status: newStatus,
+})
 
-if(error) alert('فشل التحديث')
+if(error) alert(error.message || 'فشل التحديث')
     }
 
 {/*دالة الالغاء مع تاكيد*/}

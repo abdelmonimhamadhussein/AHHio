@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import Tesseract from "tesseract.js";
 import { supabase } from "../lib/supabase";
 import { PACKAGES } from "../lib/Package";
 
@@ -35,15 +34,17 @@ export const uploadProof = async (file, planId = "pro") => {
     throw new Error("User not authenticated");
   }
 
-  const path = `proofs/${user.id}/${Date.now()}.jpg`;
-  const { error: uploadError } = await supabase.storage.from("proofs").upload(path, file);
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from("payment_proofs")
+    .upload(path, file, { upsert: false });
 
   if (uploadError) {
     throw uploadError;
   }
 
-  const { data: publicData } = supabase.storage.from("proofs").getPublicUrl(path);
-
+  const { default: Tesseract } = await import("tesseract.js");
   const {
     data: { text },
     error: ocrError,
@@ -54,67 +55,27 @@ export const uploadProof = async (file, planId = "pro") => {
   }
 
   const amount = extractAmount(text);
-  const approved = amount >= plan.price;
+  const { data: tenantData, error: tenantError } = await supabase
+    .from("tenants")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (tenantError || !tenantData) throw tenantError || new Error("Vendor store not found");
 
-  let insertError;
-  if (approved) {
-    const { data: tenantData } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-
-    const { data: currentSubscription } = await supabase
-      .from("subscriptions")
-      .select("end_date")
-      .eq("tenant_id", tenantData?.id || user.id)
-      .maybeSingle();
-    const endDate = new Date();
-    if (currentSubscription?.end_date && new Date(currentSubscription.end_date) > endDate) {
-      endDate.setTime(new Date(currentSubscription.end_date).getTime());
-    }
-    endDate.setDate(endDate.getDate() + 30);
-    ({ error: insertError } = await supabase.from("subscriptions").upsert({
-      tenant_id: tenantData?.id || user.id,
-      vendor_id: user.id,
-      amount,
-      proof_url: publicData.publicUrl,
-      status: "active",
-      end_date: endDate.toISOString(),
-    }, { onConflict: "vendor_id" }));
-  } else {
-    const { data: tenantData } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("owner_id", user.id)
-      .maybeSingle();
-
-    ({ error: insertError } = await supabase.from("renew_requests").insert({
-      tenant_id: tenantData?.id || user.id,
-      vendor_id: user.id,
-      transaction_no: `PROOF-${Date.now()}`,
-      screenshot_url: publicData.publicUrl,
-    }));
-  }
-
-  if (insertError) {
-    throw insertError;
-  }
-
-  if (approved) {
-    const { error: updateError } = await supabase
-      .from("tenants")
-      .update({ plan: plan.id })
-      .eq("owner_id", user.id);
-
-    if (updateError) {
-      throw updateError;
-    }
-  }
+  const { error: paymentError } = await supabase.from("payment_transactions").insert({
+    tenant_id: tenantData.id,
+    requested_plan_id: plan.id,
+    txn_number: `PROOF-${crypto.randomUUID()}`,
+    amount,
+    screenshot_url: uploadData.path,
+    status: "pending",
+    auto_verified: false,
+  });
+  if (paymentError) throw paymentError;
 
   return {
     amount,
-    approved,
+    approved: false,
     plan,
     publicUrl: publicData.publicUrl,
   };
@@ -139,10 +100,7 @@ export default function UploadProof() {
       const result = await uploadProof(file, plan.id);
 
       if (result.approved) {
-        setMessage(`Approved: ${result.amount} - activated ${result.plan.name}.`);
-      } else {
-        setMessage(`Pending approval: ${result.amount}`);
-      }
+      setMessage(`Payment proof submitted for manual review. OCR amount: ${result.amount}.`);
     } catch (error) {
       setMessage(error.message || "Something went wrong");
     } finally {

@@ -16,7 +16,7 @@ export default function Footer() {
             <h3 className='font-bold mb-4'>روابط سريعة</h3>
             <ul className='space-y-2 text-gray-200 text-sm'>
               <li><Link to='/' className='hover:text-white'>الرئيسية</Link></li>
-              <li><Link to='/vendor/register' className='hover:text-white'>كن تاجر معنا</Link></li>
+              <li><Link to='/vendor' className='hover:text-white'>دخول التجار</Link></li>
               <li><Link to='/cart' className='hover:text-white'>السلة</Link></li>
               <li><Link to='/login' className='hover:text-white'>تسجيل الدخول</Link></li>
             </ul>

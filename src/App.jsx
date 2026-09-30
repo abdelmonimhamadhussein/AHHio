@@ -1,29 +1,29 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
-import Home from "./Pages/Home";
-import ShopPage from "./components/product/ShopPage";
-import ProductDetails from "./components/product/ProductDetails";
-import Checkout from "./Pages/Checkout";
-import Plans from "./Pages/Plans";
-import OrderSuccess from "./Pages/Vendor/OrderSuccess";
-import VendorOrders from "./Pages/Vendor/Orders";
+const Home = lazy(() => import("./Pages/Home"));
+const ShopPage = lazy(() => import("./components/product/ShopPage"));
+const ProductDetails = lazy(() => import("./components/product/ProductDetails"));
+const Checkout = lazy(() => import("./Pages/Checkout"));
+const Plans = lazy(() => import("./Pages/Plans"));
+const OrderSuccess = lazy(() => import("./Pages/Vendor/OrderSuccess"));
+const VendorOrders = lazy(() => import("./Pages/Vendor/Orders"));
 import ScrollToTop from "./components/ScrollToTop";
-import CartPage from "./components/cart/CartPage";
-import AdminDashboard from "./components/admin/AdminDashboard";
-import Login from "./components/auth/Login";
-import Register from "./components/auth/Register";
-import VendorRegister from "./Pages/Vendor/VendorRegister";
-import VendorLogin from "./Pages/Vendor/VendorLogin";
-import VendorDashboard from "./Pages/Vendor/VendorDashboard";
-import AddProduct from "./Pages/Vendor/addProduct";
-import Billing from "./Pages/Vendor/Billing";
-import VendorSettings from "./Pages/Vendor/VendorSettings";
+const CartPage = lazy(() => import("./components/cart/CartPage"));
+const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
+const Login = lazy(() => import("./components/auth/Login"));
+const Register = lazy(() => import("./components/auth/Register"));
+const VendorLogin = lazy(() => import("./Pages/Vendor/VendorLogin"));
+const VendorDashboard = lazy(() => import("./Pages/Vendor/VendorDashboard"));
+const AddProduct = lazy(() => import("./Pages/Vendor/addProduct"));
+const Billing = lazy(() => import("./Pages/Vendor/Billing"));
+const VendorSettings = lazy(() => import("./Pages/Vendor/VendorSettings"));
 import Footer from "./components/Footer";
-import Notfound from "./Pages/Notfound";
+const Notfound = lazy(() => import("./Pages/Notfound"));
 import PrivateRoute from "./components/PrivateRoute";
-import StorePage from "./Pages/StorePage";
-import Renew from "./Pages/Vendor/Renew";
-import EditProduct from "./components/product/EditProduct";
+const StorePage = lazy(() => import("./Pages/StorePage"));
+const Renew = lazy(() => import("./Pages/Vendor/Renew"));
+const EditProduct = lazy(() => import("./components/product/EditProduct"));
 
 export default function App() {
   return (
@@ -32,9 +32,10 @@ export default function App() {
       <Navbar />
 
       <main className="container mx-auto flex-1 p-4">
+        <Suspense fallback={<div role="status" className="p-12 text-center">جارٍ تحميل الصفحة...</div>}>
         <Routes>
           <Route path="/Login" element={<Login />} />
-          <Route path="/Register" element={<Register />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/shop" element={<ShopPage />} />
@@ -55,7 +56,6 @@ export default function App() {
           />
 
           <Route path="/vendor" element={<VendorLogin />} />
-          <Route path="/vendor/register" element={<VendorRegister />} />
           <Route
             path="/vendor/renew"
             element={
@@ -115,6 +115,7 @@ export default function App() {
 
           <Route path="/notfound" element={<Notfound />} />
         </Routes>
+        </Suspense>
       </main>
 
       <Footer />

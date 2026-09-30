@@ -15,7 +15,7 @@ export default function Plans() {
           <h2 className="text-xl font-bold">{plan.name}</h2>
           <p className="my-4 text-3xl font-black">{plan.price} <small className="text-sm">جنيه / شهر</small></p>
           <ul className="mb-6 space-y-3">{plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
-          <Link to={user?.role === "vendor" ? `/vendor/billing?plan=${plan.id}` : `/vendor/register?plan=${plan.id}`} className="block rounded-lg bg-blue-600 p-3 text-center font-bold text-white">اشترك الآن</Link>
+          <Link to={user?.role === "vendor" ? `/vendor/billing?plan=${plan.id}` : `/register?type=vendor&plan=${plan.id}`} className="block rounded-lg bg-blue-600 p-3 text-center font-bold text-white">اشترك الآن</Link>
         </article>
       ))}
     </section></main>

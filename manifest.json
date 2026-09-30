@@ -1,23 +1,24 @@
 {
-"name": "AHHio-متجر الكتروني",
-"short_name": "AHHio",
-"start_url": "/",
-"display": "standalone",
-"background": "#ffffff",
-"theme_color": "#f97316",
-"lang": "ar",
-"dir": "rtl",
-"icons" : [
-{
-    "src": "/icon-192.png",
-    "size" : "192x192",
-    "type": "imge/png"
-},
-{
-    "src": "/icon-512.png",
-    "size": "512x512",
-    "type":"imge/png",
-    "purpose":"any maskable"
-}
-]
+    "name": "AHHio - متجر إلكتروني",
+    "short_name": "AHHio",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#111111",
+    "theme_color": "#111111",
+    "lang": "ar",
+    "dir": "rtl",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
 }
