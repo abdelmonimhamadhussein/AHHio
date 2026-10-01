@@ -63,14 +63,30 @@ export default function Register() {
           },
         },
       });
-      if (authError) throw authError;
+      if (authError){
+        if (authError.message.includes("already register") || authError.message.includes("User already register")){
+
+          const {data: loginData, error: loginError} = await supabase.signInWithPassword({
+            email: email.trim(),
+            password
+          });
+          if (loginError){
+            alert("الايميل ده مسجل من قبل ,اعمل تسجيل دخول");
+            navigate("/login");
+            return;
+          }
+          navigate(`/store/${cleanSlug}`);
+          return;
+        }
+        throw authError;
+      }
       if (!authData.user) throw new Error("تعذر إنشاء الحساب");
 
       if (!authData.session) {
-        alert("تم إنشاء الحساب. راجع بريدك الإلكتروني لتفعيله ثم سجّل الدخول.");
-        navigate("/vendor");
+        navigate("/login");
         return;
       }
+      navigate(`/store/${cleanSlug}`)
 
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: authData.user.id,

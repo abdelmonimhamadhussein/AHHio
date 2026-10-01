@@ -13,7 +13,7 @@ export default function VendorSettings() {
     store_name: "",
     slug: "",
     description: "",
-    city: "الخرطوم بحري",
+    city: "",
     bank_account: "",
     whatsapp_number: "",
     instagram: "",

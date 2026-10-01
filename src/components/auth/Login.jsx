@@ -65,7 +65,7 @@ export default function SignIn() {
                   disabled={loading}
                   className="w-full rounded-xl bg-sky-500 py-3 font-bold text-white hover:bg-sky-600 disabled:opacity-50"
                   >
-                    {loading? 'دخول' : '...جاري التسجيل الدخول'}
+                    {loading? '...جاري تسجيل الدخول' : 'تسجيل دخول'}
                   </button>
                 </form>
 
