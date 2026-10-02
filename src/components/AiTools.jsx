@@ -1,120 +1,120 @@
-import { useEffect, useRef, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useEffect, useRef, useState } from "react"
+import { supabase } from "../lib/supabase"
 
-const suggestions = ["ايفون", "سماعة", "تي شيرت", "ساعة"];
+const defaultSuggestions = ["ايفون", "سماعة", "تي شيرت", "حقيبة"]
 
 export default function AiTools({ storeId, tenantName }) {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState([{ role: "ai", text: `أهلا بك في ${tenantName || "المتجر"} 👋`, products: [] }]);
-  const endRef = useRef(null);
+  const [open, setOpen] = useState(false)
+  const [input, setInput] = useState("")
+  const [messages, setMessages] = useState([
+    { role: "ai", text: `مرحبا في ${tenantName || "المتجر"} 👋 اكتب اسم المنتج` }
+  ])
+  const [loading, setLoading] = useState(false)
+  const endRef = useRef(null)
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, open]);
-
-  const resetChat = () => setMessages([{ role: "ai", text: `أهلا بك في ${tenantName || "المتجر"} 👋`, products: [] }]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, loading])
 
   const ask = async () => {
-    const q = input.trim();
-    if (!q || loading) return;
+    const q = input.trim()
+    if (loading || !q) return
 
-    setMessages((m) => [...m, { role: "user", text: q, products: [] }]);
-    setInput("");
-    setLoading(true);
+    setMessages(m => [...m, { role: "user", text: q }])
+    setInput("")
+    setLoading(true)
+    console.log("Searching for:", q, "in store:", storeId)
 
     try {
-      if (!storeId) {
-        setMessages((m) => [...m, { role: "ai", text: "لا يوجد متجر محدد حاليًا.", products: [] }]);
-        return;
+      const pattern = q.replace(/[\\%_]/g, "\\$&")
+      let query = supabase.from("products").select("name, price, description").limit(5)
+
+      if (storeId) query = query.eq("store_id", storeId)
+
+      query = query.or(`name.ilike.%${pattern}%,description.ilike.%${pattern}%`)
+
+      const { data, error } = await query
+      console.log("Result:", data, error)
+      if (error) throw error
+
+      let reply = ""
+      if (!data || data.length === 0) {
+        reply = `ما لقيت "${q}" 😕\nجرب كلمة تانية. المنتجات العندنا: ${defaultSuggestions.join("، ")}`
+      } else {
+        reply = data
+          .map(product => {
+            const name = product?.name || "منتج"
+            const price = Number(product?.price ?? 0)
+            const description = product?.description || "لا يوجد وصف"
+            return `📦 ${name}\n💰 ${Number.isFinite(price) ? `${price} جنيه` : "السعر غير متوفر"}\n${description}`
+          })
+          .join("\n\n---\n\n")
       }
 
-      const { data, error } = await supabase
-        .from("products")
-        .select("name, price, description")
-        .eq("store_id", storeId)
-        .or(`name.ilike.%${q}%,description.ilike.%${q}%`)
-        .limit(4);
-
-      if (error) throw error;
-      if (!data?.length) {
-        setMessages((m) => [...m, { role: "ai", text: "ما لقيت منتج مطابق، جرّب كلمة ثانية.", products: [] }]);
-        return;
-      }
-
-      setMessages((m) => [...m, { role: "ai", text: "هذه المنتجات المناسبة لك:", products: data }]);
-    } catch {
-      setMessages((m) => [...m, { role: "ai", text: "حدثت مشكلة، حاول مرة أخرى بعد قليل.", products: [] }]);
+      setMessages(m => [...m, { role: "ai", text: reply }])
+    } catch (e) {
+      console.error(e)
+      setMessages(m => [...m, { role: "ai", text: "في مشكلة في الاتصال بـ Supabase - اتأكد من الـ RLS" }])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(!open)} className="fixed bottom-6 left-6 z-[999] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#D4AF37] via-[#F5D77A] to-[#B8891A] text-2xl font-black text-black shadow-[0_12px_35px_rgba(212,175,55,0.45)] transition hover:scale-105">
+      <button onClick={() => setOpen(!open)} className="fixed bottom-6 left-6 z-[999] w-14 h-14 rounded-full bg-[#D4AF37] text-black text-2xl font-bold shadow-xl flex items-center justify-center">
         {open ? "✕" : "AI"}
       </button>
-
       {open && (
-        <div className="fixed bottom-24 left-6 z-[999] flex h-[470px] w-[92vw] max-w-[380px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0B0B0B]/95 backdrop-blur-xl shadow-[0_25px_70px_rgba(0,0,0,0.48)]">
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/5 p-4">
-            <div>
-              <h3 className="text-base font-black text-[#D4AF37]">مساعد {tenantName || "المتجر"} الذكي</h3>
-              <p className="mt-1 text-[11px] text-white/60">بحث فوري داخل منتجات المتجر</p>
-            </div>
-            <button type="button" onClick={resetChat} className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white/70">مسح</button>
+        <div className="fixed bottom-24 left-6 z-[999] w-[90vw] max-w-[360px] h-[420px] rounded-[24px] border border-white/10 bg-black/90 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden">
+          <div className="p-4 bg-white/5 border-b border-white/10">
+            <h3 className="text-[#D4AF37] font-black">مساعد {tenantName || "المتجر"}</h3>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m, i) => (
-              <div key={i} className={`max-w-[86%] ${m.role === "user" ? "ml-auto" : "mr-auto"}`}>
-                {m.role === "user" ? (
-                  <div className="rounded-2xl rounded-br-md bg-[#D4AF37] px-3 py-2 text-sm font-medium text-black">{m.text}</div>
-                ) : (
-                  <div className="rounded-2xl rounded-bl-md bg-white/5 p-3 text-sm text-white">
-                    {m.text && <p className="mb-2 leading-7">{m.text}</p>}
-                    {m.products?.length > 0 && (
-                      <div className="space-y-2">
-                        {m.products.map((product, idx) => (
-                          <div key={`${product.name}-${idx}`} className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="text-sm font-bold text-[#F1D66B]">{product.name}</span>
-                              <span className="rounded-full bg-[#D4AF37]/15 px-2 py-1 text-[10px] font-semibold text-[#F1D66B]">متاح</span>
-                            </div>
-                            <p className="mt-2 text-xs leading-6 text-white/70">{product.description || "لا يوجد وصف لهذا المنتج حاليًا."}</p>
-                            <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2">
-                              <span className="text-[10px] uppercase tracking-[0.12em] text-white/45">السعر</span>
-                              <span className="text-sm font-black text-[#F1D66B]">{Number(product.price) ? `${Number(product.price).toLocaleString("ar-EG")} جنيه` : "السعر غير متوفر"}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+              <div key={i} className={`max-w-[85%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${m.role === "user" ? "ml-auto bg-[#D4AF37] text-black" : "bg-white/10 text-white"}`}>
+                {m.text}
               </div>
             ))}
-
-            {loading && <div className="mr-auto max-w-[75%] rounded-2xl rounded-bl-md bg-white/5 px-3 py-2 text-xs text-white/65">أبحث عن أفضل النتائج...</div>}
+            {loading && <div className="text-white/50 text-xs">بفتش...</div>}
             <div ref={endRef} />
           </div>
 
-          <div className="border-t border-white/10 bg-white/5 p-3">
+          <div className="px-3 pt-3 pb-2 border-t border-white/10">
             <div className="mb-2 flex flex-wrap gap-2">
-              {suggestions.map((item) => (
-                <button key={item} type="button" onClick={() => setInput(item)} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/75 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 hover:text-[#F1D66B]">
+              {defaultSuggestions.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setInput(item)}
+                  className="rounded-full border border-[#D4AF37]/60 px-2 py-1 text-[10px] text-[#D4AF37] bg-[#D4AF37]/10"
+                >
                   {item}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
-              <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask()} placeholder="اسأل عن منتج..." disabled={loading} className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-[#D4AF37]/60 focus:bg-white/7 disabled:opacity-50" />
-              <button type="button" onClick={ask} disabled={loading} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D4AF37] text-lg font-black text-black shadow-lg shadow-[#D4AF37]/25 transition hover:brightness-110 disabled:opacity-50">↑</button>
+            <div className="flex gap-2">
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && ask()}
+                placeholder="اسأل..."
+                disabled={loading}
+                className="flex-1 bg-white/10 rounded-full px-4 py-2 text-sm text-white outline-none disabled:opacity-50"
+              />
+              <button
+                onClick={ask}
+                disabled={loading || !input.trim()}
+                className="bg-[#D4AF37] text-black w-10 h-10 rounded-full font-bold disabled:opacity-50"
+              >
+                ↑
+              </button>
             </div>
           </div>
         </div>
       )}
     </>
-  );
+  )
 }
