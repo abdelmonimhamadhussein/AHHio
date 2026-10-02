@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCart } from "../components/context/CartContext";
 import { supabase } from "../lib/supabase";
+import  AiTools  from "../components/AiTools";
 
 export default function StorePage() {
   const { slug } = useParams();
@@ -134,6 +135,9 @@ export default function StorePage() {
             </div>
           </div>
         )}
+      </div>
+      <div className="mx-auto mt-12 max-w-6xl px-4">
+        <AiTools storeId={tenant?.id} tenantName={tenant?.name} />
       </div>
     </div>
   );
