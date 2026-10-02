@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "../lib/supabase"
 
-const defaultSuggestions = ["ايفون", "سماعة", "تي شيرت", "حقيبة"]
 
 export default function AiTools({ storeId, tenantName }) {
   const [open, setOpen] = useState(false)
