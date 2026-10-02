@@ -101,6 +101,9 @@ export default function UploadProof() {
 
       if (result.approved) {
       setMessage(`Payment proof submitted for manual review. OCR amount: ${result.amount}.`);
+      }else{
+        setMessage("Upload, waiting for approval");
+      }
     } catch (error) {
       setMessage(error.message || "Something went wrong");
     } finally {
