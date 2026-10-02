@@ -3,14 +3,27 @@ import { supabase } from "../../lib/supabase";
 import { Link } from "react-router-dom";
 
 export default function AdminDashboard() {
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("admin_pass") === "AHHioTest2026");
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
   const [tenants, setTenants] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [payments, setPayments] = useState([]);
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    if (isAdmin) loadAll();
+  }, [isAdmin]);
+
+  function unlockAdmin(event) {
+    event.preventDefault();
+    if (password !== "AHHioTest2026") {
+      setPasswordError(true);
+      return;
+    }
+    localStorage.setItem("admin_pass", password);
+    setIsAdmin(true);
+  }
 
   async function loadAll() {
     const { data: tenantsData } = await supabase.from("tenants").select("*");
@@ -56,6 +69,31 @@ export default function AdminDashboard() {
     }
     await loadAll();
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#111111] p-4 text-white">
+        <form onSubmit={unlockAdmin} className="w-full max-w-sm rounded-xl bg-[#171717] p-6">
+          <h1 className="mb-4 text-xl font-bold text-[#D4AF37]">دخول الإدارة</h1>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setPasswordError(false);
+            }}
+            placeholder="كلمة المرور"
+            autoComplete="current-password"
+            className="mb-3 w-full rounded border border-white/20 bg-[#111111] px-3 py-2 text-white"
+          />
+          {passwordError && <p className="mb-3 text-sm text-red-400">كلمة المرور غير صحيحة</p>}
+          <button type="submit" className="w-full rounded bg-[#D4AF37] px-3 py-2 font-bold text-black">
+            دخول
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#111111] p-4 text-white">

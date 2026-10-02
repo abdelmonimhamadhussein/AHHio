@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
+import AdminDashboard from "./components/admin/AdminDashboard";
 const Home = lazy(() => import("./Pages/Home"));
 const ShopPage = lazy(() => import("./components/product/ShopPage"));
 const ProductDetails = lazy(() => import("./components/product/ProductDetails"));
@@ -10,7 +11,6 @@ const OrderSuccess = lazy(() => import("./Pages/Vendor/OrderSuccess"));
 const VendorOrders = lazy(() => import("./Pages/Vendor/Orders"));
 import ScrollToTop from "./components/ScrollToTop";
 const CartPage = lazy(() => import("./components/cart/CartPage"));
-const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
 const Login = lazy(() => import("./components/auth/Login"));
 const Register = lazy(() => import("./components/auth/Register"));
 const VendorLogin = lazy(() => import("./Pages/Vendor/VendorLogin"));
@@ -39,6 +39,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/shop" element={<ShopPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/store/:slug" element={<StorePage />} />
           <Route path="/:slug" element={<StorePage />} />
           <Route path="/product/:id" element={<ProductDetails />} />
