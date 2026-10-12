@@ -120,6 +120,18 @@ export default function Register() {
         tenantData = data;
       }
 
+      const periodStart = new Date();
+      const periodEnd = new Date(periodStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const { error: subscriptionError } = await supabase.from("subscriptions").upsert({
+        tenant_id: tenantData.id,
+        plan_id: "basic",
+        status: "active",
+        start_date: periodStart.toISOString(),
+        end_date: periodEnd.toISOString(),
+        amount: 0,
+      }, { onConflict: "tenant_id", ignoreDuplicates: true });
+      if (subscriptionError) throw subscriptionError;
+
       localStorage.setItem("tenant", JSON.stringify(tenantData));
       navigate("/vendor/dashboard");
     } catch (registrationError) {

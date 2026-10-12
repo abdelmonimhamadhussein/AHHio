@@ -190,6 +190,23 @@ create index if not exists delivery_agents_store_idx on public.delivery_agents(s
 create index if not exists subscriptions_tenant_idx on public.subscriptions(tenant_id);
 create unique index if not exists subscriptions_tenant_unique on public.subscriptions(tenant_id) where tenant_id is not null;
 
+create or replace function public.ensure_free_subscription_for_tenant()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+begin
+  insert into public.subscriptions (tenant_id, plan_id, status, start_date, end_date, amount)
+  values (new.id, 'basic', 'active', now(), now() + interval '30 days', 0)
+  on conflict (tenant_id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists ensure_tenant_free_subscription on public.tenants;
+create constraint trigger ensure_tenant_free_subscription
+after insert on public.tenants
+deferrable initially deferred
+for each row execute procedure public.ensure_free_subscription_for_tenant();
+
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public
 as $$
@@ -249,7 +266,7 @@ begin
       selected_plan_id,
       case when selected_plan_price > 0 then 'trial' else 'active' end,
       now(),
-      case when selected_plan_price > 0 then now() + interval '3 days' else null end,
+      case when selected_plan_price > 0 then now() + interval '3 days' else now() + interval '30 days' end,
       coalesce(selected_plan_price, 0)
     )
     on conflict (tenant_id) do nothing;
@@ -346,6 +363,17 @@ drop policy if exists subscriptions_tenant_access on public.subscriptions;
 drop policy if exists subscriptions_owner_read on public.subscriptions;
 create policy subscriptions_owner_read on public.subscriptions for select to authenticated
 using (public.owns_tenant(tenant_id) or public.is_admin());
+drop policy if exists subscriptions_owner_free_insert on public.subscriptions;
+create policy subscriptions_owner_free_insert on public.subscriptions for insert to authenticated
+with check (
+  public.owns_tenant(tenant_id)
+  and plan_id = 'basic'
+  and status = 'active'
+  and amount = 0
+  and end_date >= start_date
+  and end_date <= start_date + interval '30 days'
+);
+grant insert on public.subscriptions to authenticated;
 drop policy if exists subscriptions_admin_write on public.subscriptions;
 create policy subscriptions_admin_write on public.subscriptions for all to authenticated
 using (public.is_admin()) with check (public.is_admin());
