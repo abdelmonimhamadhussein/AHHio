@@ -66,7 +66,7 @@ export default function Register() {
       if (authError){
         if (authError.message.includes("already register") || authError.message.includes("User already register")){
 
-          const {data: loginData, error: loginError} = await supabase.signInWithPassword({
+          const { error: loginError } = await supabase.auth.signInWithPassword({
             email: email.trim(),
             password
           });
@@ -130,7 +130,7 @@ export default function Register() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto min-h-[70vh] max-w-md py-8">
+    <div dir="rtl" className="mx-auto min-h-[70vh] max-w-md py-8 text-black">
       <section className="rounded-2xl border border-sky-100 bg-white p-6 text-slate-900 shadow-sm sm:p-8">
         <h1 className="mb-6 text-center text-2xl font-bold text-sky-800">إنشاء حساب</h1>
         <div className="mb-6 grid grid-cols-2 rounded-xl bg-slate-100 p-1" role="group" aria-label="نوع الحساب">

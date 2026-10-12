@@ -42,6 +42,7 @@ create table if not exists public.tenants (
   slug text not null unique,
   description text,
   city text,
+  delivery_fee numeric not null default 0 check (delivery_fee >= 0),
   phone text,
   whatsapp_number text,
   bank_account text,
@@ -65,6 +66,15 @@ alter table public.tenants add column if not exists logo_url text;
 alter table public.tenants add column if not exists banner_url text;
 alter table public.tenants add column if not exists theme_color text default '#E91E63';
 alter table public.tenants add column if not exists updated_at timestamptz default now();
+alter table public.tenants add column if not exists delivery_fee numeric not null default 0 check (delivery_fee >= 0);
+
+create table if not exists public.delivery_agents (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.tenants(id) on delete cascade,
+  name text not null,
+  phone text not null,
+  is_active boolean not null default true
+);
 
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -119,6 +129,10 @@ create table if not exists public.orders (
   city text,
   address text,
   items jsonb not null default '[]'::jsonb,
+  subtotal numeric not null default 0,
+  delivery_fee numeric not null default 0,
+  tax numeric not null default 0,
+  delivery_agent_id uuid references public.delivery_agents(id) on delete set null,
   total numeric not null default 0,
   commission numeric not null default 0,
   tenant_earning numeric not null default 0,
@@ -129,6 +143,10 @@ create table if not exists public.orders (
 );
 
 alter table public.orders add column if not exists tenant_id uuid references public.tenants(id) on delete restrict;
+alter table public.orders add column if not exists subtotal numeric not null default 0;
+alter table public.orders add column if not exists delivery_fee numeric not null default 0;
+alter table public.orders add column if not exists tax numeric not null default 0;
+alter table public.orders add column if not exists delivery_agent_id uuid references public.delivery_agents(id) on delete set null;
 alter table public.orders add column if not exists phone text;
 alter table public.orders add column if not exists city text;
 alter table public.orders add column if not exists commission numeric default 0;
@@ -168,6 +186,7 @@ alter table public.renew_requests alter column vendor_id drop not null;
 create index if not exists tenants_slug_idx on public.tenants(slug);
 create index if not exists products_tenant_idx on public.products(tenant_id);
 create index if not exists orders_tenant_idx on public.orders(tenant_id);
+create index if not exists delivery_agents_store_idx on public.delivery_agents(store_id);
 create index if not exists subscriptions_tenant_idx on public.subscriptions(tenant_id);
 create unique index if not exists subscriptions_tenant_unique on public.subscriptions(tenant_id) where tenant_id is not null;
 
@@ -248,6 +267,7 @@ alter table public.plans enable row level security;
 alter table public.tenants enable row level security;
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
+alter table public.delivery_agents enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.payment_transactions enable row level security;
 alter table public.renew_requests enable row level security;
@@ -301,6 +321,21 @@ drop policy if exists products_tenant_delete on public.products;
 create policy products_tenant_delete on public.products for delete to authenticated
 using (public.owns_tenant(tenant_id) or public.is_admin());
 
+drop policy if exists delivery_agents_tenant_read on public.delivery_agents;
+create policy delivery_agents_tenant_read on public.delivery_agents for select to authenticated
+using (public.owns_tenant(store_id) or public.is_admin());
+drop policy if exists delivery_agents_tenant_insert on public.delivery_agents;
+create policy delivery_agents_tenant_insert on public.delivery_agents for insert to authenticated
+with check (public.owns_tenant(store_id) or public.is_admin());
+drop policy if exists delivery_agents_tenant_update on public.delivery_agents;
+create policy delivery_agents_tenant_update on public.delivery_agents for update to authenticated
+using (public.owns_tenant(store_id) or public.is_admin())
+with check (public.owns_tenant(store_id) or public.is_admin());
+drop policy if exists delivery_agents_tenant_delete on public.delivery_agents;
+create policy delivery_agents_tenant_delete on public.delivery_agents for delete to authenticated
+using (public.owns_tenant(store_id) or public.is_admin());
+grant select, insert, update, delete on public.delivery_agents to authenticated;
+
 drop policy if exists orders_tenant_read on public.orders;
 create policy orders_tenant_read on public.orders for select to authenticated
 using (public.owns_tenant(tenant_id) or public.is_admin());
@@ -337,7 +372,7 @@ revoke all on public.renew_requests from anon, authenticated;
 revoke update on public.tenants from anon, authenticated;
 grant update (
   owner_name, store_name, description, city, phone, whatsapp_number,
-  bank_account, instagram, logo_url, banner_url, theme_color, updated_at
+  bank_account, instagram, logo_url, banner_url, theme_color, delivery_fee, updated_at
 ) on public.tenants to authenticated;
 
 create or replace function public.place_marketplace_order(
@@ -363,6 +398,9 @@ declare
   quantity integer;
   order_items jsonb := '[]'::jsonb;
   orders_result jsonb := '[]'::jsonb;
+  order_subtotal numeric := 0;
+  delivery_fee numeric := 0;
+  order_tax numeric := 0;
   order_total numeric := 0;
   commission_rate numeric := 15;
   order_id uuid;
@@ -390,6 +428,7 @@ begin
     end if;
 
     order_items := '[]'::jsonb;
+    order_subtotal := 0;
     order_total := 0;
     commission_rate := 15;
 
@@ -399,6 +438,8 @@ begin
     if not found then
       raise exception 'Store is unavailable';
     end if;
+    delivery_fee := coalesce(tenant_record.delivery_fee, 0);
+    order_tax := 0;
 
     for item_record in select value from jsonb_array_elements(requested_items) as item(value) loop
       product_id := (item_record->>'id')::uuid;
@@ -425,8 +466,10 @@ begin
         'price', product_record.price,
         'qty', quantity
       ));
-      order_total := order_total + product_record.price * quantity;
+      order_subtotal := order_subtotal + product_record.price * quantity;
     end loop;
+
+    order_total := order_subtotal + delivery_fee + order_tax;
 
     select coalesce(p.commission_percent, 15) into commission_rate
     from public.subscriptions s
@@ -439,18 +482,23 @@ begin
     commission_rate := coalesce(commission_rate, 15);
 
     insert into public.orders (
-      tenant_id, customer_name, phone, city, address, items, total,
+      tenant_id, customer_name, phone, city, address, items, subtotal,
+      delivery_fee, tax, total,
       commission, tenant_earning, payment_method, payment_txn, status
     ) values (
       target_tenant, trim(customer_name), trim(customer_phone), trim(customer_city),
-      trim(customer_address), order_items, order_total,
-      round(order_total * commission_rate / 100, 2),
-      order_total - round(order_total * commission_rate / 100, 2),
+      trim(customer_address), order_items, order_subtotal,
+      delivery_fee, order_tax, order_total,
+      round(order_subtotal * commission_rate / 100, 2),
+      order_subtotal - round(order_subtotal * commission_rate / 100, 2),
       'cash', 'cash-' || gen_random_uuid()::text, 'pending'
     ) returning id into order_id;
 
     orders_result := orders_result || jsonb_build_array(jsonb_build_object(
       'id', order_id,
+      'subtotal', order_subtotal,
+      'delivery_fee', delivery_fee,
+      'tax', order_tax,
       'total', order_total,
       'store_name', tenant_record.store_name,
       'whatsapp_number', tenant_record.whatsapp_number
@@ -463,6 +511,46 @@ $$;
 
 revoke all on function public.place_marketplace_order(text, text, text, text, jsonb) from public;
 grant execute on function public.place_marketplace_order(text, text, text, text, jsonb) to anon, authenticated;
+
+create or replace function public.assign_order_delivery_agent(target_order uuid, target_agent uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  order_tenant uuid;
+begin
+  select tenant_id into order_tenant
+  from public.orders
+  where id = target_order
+  for update;
+  if not found then
+    raise exception 'Order not found';
+  end if;
+
+  if not public.is_admin() and not public.owns_tenant(order_tenant) then
+    raise exception 'Not authorized' using errcode = '42501';
+  end if;
+
+  if target_agent is not null and not exists (
+    select 1
+    from public.delivery_agents
+    where id = target_agent
+      and store_id = order_tenant
+      and is_active = true
+  ) then
+    raise exception 'Delivery agent must be active and belong to the order store';
+  end if;
+
+  update public.orders
+  set delivery_agent_id = target_agent
+  where id = target_order;
+end;
+$$;
+
+revoke all on function public.assign_order_delivery_agent(uuid, uuid) from public;
+grant execute on function public.assign_order_delivery_agent(uuid, uuid) to authenticated;
 
 create or replace function public.update_order_status(target_order uuid, new_status text)
 returns void

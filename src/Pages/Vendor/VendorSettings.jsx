@@ -15,6 +15,7 @@ export default function VendorSettings() {
     description: "",
     city: "",
     bank_account: "",
+    delivery_fee: "0",
     whatsapp_number: "",
     instagram: "",
     theme_color: "#E91E63",
@@ -42,6 +43,7 @@ export default function VendorSettings() {
         description: data.description || "",
         city: data.city || "الخرطوم بحري",
         bank_account: data.bank_account || "",
+        delivery_fee: String(data.delivery_fee ?? 0),
         whatsapp_number: data.whatsapp_number || "",
         instagram: data.instagram || "",
         theme_color: data.theme_color || "#E91E63",
@@ -86,6 +88,12 @@ export default function VendorSettings() {
 
   const save = async () => {
     if (!tenant) return;
+    const deliveryFee = Number(form.delivery_fee);
+    if (!Number.isFinite(deliveryFee) || deliveryFee < 0) {
+      alert("رسوم التوصيل يجب أن تكون رقماً يساوي صفراً أو أكبر");
+      return;
+    }
+
     setSaving(true);
     const updates = {
       store_name: form.store_name,
@@ -93,6 +101,7 @@ export default function VendorSettings() {
       description: form.description,
       city: form.city,
       bank_account: form.bank_account,
+      delivery_fee: deliveryFee,
       whatsapp_number: form.whatsapp_number,
       instagram: form.instagram,
       theme_color: form.theme_color,
@@ -155,6 +164,11 @@ export default function VendorSettings() {
             {form.banner_url && <img src={form.banner_url} alt="banner" className="mt-3 h-24 w-full rounded-2xl object-cover" />}
           </div>
         </div>
+
+        <label className="mb-5 block rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/60">
+          رسوم التوصيل (جنيه)
+          <input type="number" min="0" step="0.01" value={form.delivery_fee} onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })} className="mt-2 w-full bg-transparent text-white outline-none" />
+        </label>
 
         <div className="mt-5">
           <div className="mb-3 text-sm text-white/60">لون السمة</div>

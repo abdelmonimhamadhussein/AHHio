@@ -75,6 +75,7 @@ export default function VendorDashboard() {
           <div className="flex flex-wrap gap-2">
             <Link to={`/store/${tenant.slug}`} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white">عرض المتجر</Link>
             <Link to="/vendor/add-product" className="rounded-full bg-[#E91E63] px-4 py-2 text-sm font-bold text-white">إضافة منتج</Link>
+            <Link to="/dashboard/delivery_agents" className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white">مندوبين التوصيل</Link>
             <Link to="/vendor/settings" className="rounded-full border border-[#D4AF37]/50 px-4 py-2 text-sm font-bold text-[#D4AF37]">إعدادات</Link>
           </div>
         </div>

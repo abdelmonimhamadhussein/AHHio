@@ -126,7 +126,7 @@ export default function StorePage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-white/5 p-4">
                 <div className="text-sm text-white/50">المدينة</div>
-                <div className="mt-2 font-bold text-white">{tenant.city || "الخرطوم"}</div>
+                <div className="mt-2 font-bold text-white">{tenant.city || ""}</div>
               </div>
               <div className="rounded-2xl bg-white/5 p-4">
                 <div className="text-sm text-white/50">رقم الواتساب</div>

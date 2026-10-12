@@ -19,7 +19,13 @@ export default function Checkout() {
     return acc;
   }, {});
 
-  const total = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
+  const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
+  const deliveryFee = Object.values(grouped).reduce(
+    (sum, tenantItems) => sum + Number(tenantItems[0]?.seller?.delivery_fee || 0),
+    0
+  );
+  const tax = 0;
+  const total = subtotal + deliveryFee + tax;
 
   const handleOrder = async () => {
     if (!name || !phone || !city || !address) return alert("يرجى تعبئة البيانات كاملة");
@@ -88,7 +94,10 @@ export default function Checkout() {
 
         <div className="mt-5 rounded-[20px] bg-[#111111] p-4 text-white/80">
           <div>عدد المتاجر: {Object.keys(grouped).length}</div>
-          <div className="mt-2 text-2xl font-black text-[#E91E63]">الإجمالي: {total.toLocaleString()} SDG</div>
+          <div className="mt-3 flex justify-between text-sm"><span>المجموع الفرعي</span><span>{subtotal.toLocaleString()} SDG</span></div>
+          <div className="mt-2 flex justify-between text-sm"><span>رسوم التوصيل</span><span>{deliveryFee.toLocaleString()} SDG</span></div>
+          <div className="mt-2 flex justify-between text-sm"><span>الضريبة</span><span>{tax.toLocaleString()} SDG</span></div>
+          <div className="mt-3 border-t border-white/10 pt-3 text-2xl font-black text-[#E91E63]">الإجمالي: {total.toLocaleString()} SDG</div>
         </div>
 
         <button onClick={handleOrder} disabled={submitting} className="mt-6 w-full rounded-full bg-[#E91E63] px-5 py-3 text-lg font-black text-white disabled:opacity-60">

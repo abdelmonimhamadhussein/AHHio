@@ -20,9 +20,9 @@ export default function SignIn() {
             navigate('/');
         } catch (signInError) {
             setError(signInError.message || 'فشل تسجيل الدخول');
-
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
     }
 
     return (

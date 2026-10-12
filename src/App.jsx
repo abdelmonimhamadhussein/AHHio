@@ -18,6 +18,7 @@ const VendorDashboard = lazy(() => import("./Pages/Vendor/VendorDashboard"));
 const AddProduct = lazy(() => import("./Pages/Vendor/addProduct"));
 const Billing = lazy(() => import("./Pages/Vendor/Billing"));
 const VendorSettings = lazy(() => import("./Pages/Vendor/VendorSettings"));
+const DeliveryAgents = lazy(() => import("./Pages/Vendor/DeliveryAgents"));
 import Footer from "./components/Footer";
 const Notfound = lazy(() => import("./Pages/Notfound"));
 import PrivateRoute from "./components/PrivateRoute";
@@ -94,6 +95,14 @@ export default function App() {
             element={
               <PrivateRoute allowedRoles={['vendor']}>
                 <VendorSettings />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/delivery_agents"
+            element={
+              <PrivateRoute allowedRoles={['vendor']}>
+                <DeliveryAgents />
               </PrivateRoute>
             }
           />
