@@ -8,9 +8,10 @@ export default function CartPage() {
   const grouped = useMemo(
     () =>
       items.reduce((acc, item) => {
-        const tenantId = item.tenant_id || item.vendor_id || "unknown";
-        if (!acc[tenantId]) acc[tenantId] = [];
-        acc[tenantId].push(item);
+        const tenantId = item.tenant_id ?? item.vendor_id ?? null;
+        const groupKey = tenantId ?? "unassigned";
+        if (!acc[groupKey]) acc[groupKey] = [];
+        acc[groupKey].push(item);
         return acc;
       }, {}),
     [items]

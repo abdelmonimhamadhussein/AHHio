@@ -13,7 +13,7 @@ export default function Checkout() {
   const [createdOrders, setCreatedOrders] = useState([]);
 
   const grouped = items.reduce((acc, item) => {
-    const tenantId = item.tenant_id || item.vendor_id || "unknown";
+    const tenantId = item.tenant_id || item.vendor_id || null;
     if (!acc[tenantId]) acc[tenantId] = [];
     acc[tenantId].push(item);
     return acc;
