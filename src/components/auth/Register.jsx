@@ -6,7 +6,7 @@ import { PACKAGES } from "../../lib/Package";
 
 export default function Register() {
   const [searchParams] = useSearchParams();
-  const [accountType, setAccountType] = useState(() => searchParams.get("type") === "vendor" ? "vendor" : "customer");
+  const [accountType, setAccountType] = useState(() => searchParams.get("type") === "vendor"? "vendor" : "customer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -23,9 +23,7 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
-      // --- 1. لو زبون ---
       if (accountType === "customer") {
         await signUpCustomer(email.trim(), password, fullName.trim());
         alert("تم إنشاء حساب الزبون بنجاح");
@@ -33,10 +31,9 @@ export default function Register() {
         return;
       }
 
-      // --- 2. لو تاجر ---
       const cleanSlug = slug.trim().toLowerCase();
-      if (password.length < 6 || !/[0-9]/.test(password)) throw new Error("كلمة السر 6 أحرف على الأقل وفيها رقم");
-      if (cleanSlug.length < 3 || !/^[a-z0-9]+$/.test(cleanSlug)) throw new Error("رابط المتجر انجليزي فقط بدون مسافات");
+      if (password.length < 6 ||!/[0-9]/.test(password)) throw new Error("كلمة السر 6 أحرف على الأقل وفيها رقم");
+      if (cleanSlug.length < 3 ||!/^[a-z0-9]+$/.test(cleanSlug)) throw new Error("رابط المتجر انجليزي فقط بدون مسافات");
 
       const { data: existingSlug } = await supabase.from("tenants").select("id").eq("slug", cleanSlug).maybeSingle();
       if (existingSlug) throw new Error("رابط المتجر مستخدم بالفعل");
@@ -51,11 +48,9 @@ export default function Register() {
 
       const userId = authData.user.id;
 
-      // 2. ALWAYS profile
       const { error: profileError } = await supabase.from("profiles").upsert({ id: userId, email: email.trim(), role: "vendor" }, { onConflict: 'id' });
       if (profileError) throw profileError;
 
-      // 3. ALWAYS check tenant by owner_id
       let { data: existingTenant } = await supabase.from("tenants").select("*").eq("owner_id", userId).maybeSingle();
       let tenantData = existingTenant;
 
@@ -77,22 +72,7 @@ export default function Register() {
         tenantData = newTenant;
       }
 
-      // 4. subscription
-      const start = new Date();
-      const end = new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000);
-      await supabase.from("subscriptions").upsert({
-        tenant_id: tenantData.id,
-        plan_id: searchParams.get("plan") || "basic",
-        status: "active",
-        start_date: start.toISOString(),
-        end_date: end.toISOString(),
-        amount: 0
-      }, { onConflict: "tenant_id" });
-
-      // 5. localStorage
       localStorage.setItem("tenant", JSON.stringify(tenantData));
-
-      // 6. ONLY ONE navigate
       navigate("/vendor/dashboard");
 
     } catch (err) {
@@ -102,3 +82,45 @@ export default function Register() {
       setLoading(false);
     }
   };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+        <h2 className="text-2xl font-bold text-center mb-2">إنشاء حساب جديد</h2>
+        {selectedPlan && <p className="text-center text-sm text-pink-600 mb-4">الباقة: {selectedPlan.name}</p>}
+
+        <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+          <button type="button" onClick={() => setAccountType("customer")} className={`flex-1 py-2 rounded-md text-sm font-medium ${accountType === "customer"? "bg-white shadow text-black" : "text-gray-500"}`}>زبون</button>
+          <button type="button" onClick={() => setAccountType("vendor")} className={`flex-1 py-2 rounded-md text-sm font-medium ${accountType === "vendor"? "bg-white shadow text-black" : "text-gray-500"}`}>تاجر</button>
+        </div>
+
+        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {accountType === "customer"? (
+            <>
+              <input type="text" placeholder="الاسم الكامل" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="password" placeholder="كلمة السر" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 border rounded-lg" />
+            </>
+          ) : (
+            <>
+              <input type="text" placeholder="اسم المتجر" value={storeName} onChange={(e) => setStoreName(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="text" placeholder="رابط المتجر (انجليزي فقط) مثل: mystore" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} required className="w-full p-3 border rounded-lg" />
+              <input type="text" placeholder="رقم الواتساب" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="password" placeholder="كلمة السر (6+ وفيها رقم)" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 border rounded-lg" />
+            </>
+          )}
+          <button type="submit" disabled={loading} className="w-full bg-pink-600 text-white py-3 rounded-lg font-bold hover:bg-pink-700 disabled:opacity-50">
+            {loading? "جاري الإنشاء..." : "إنشاء حساب"}
+          </button>
+        </form>
+
+        <p className="text-center text-sm mt-6 text-gray-500">
+          لديك حساب؟ <Link to="/login" className="text-pink-600 font-bold">تسجيل دخول</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
