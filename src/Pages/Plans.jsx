@@ -6,8 +6,8 @@ export default function Plans() {
   const { user } = useAuth();
   const plans = Object.values(PACKAGES);
   return (
-    <main className="min-h-screen bg-slate-50 p-8" dir="rtl"><header className="mb-10 text-center">
-      <h1 className="text-3xl font-black">اختر الباقة المناسبة لك</h1>
+    <main className="min-h-screen bg-slate-50 p-8 text_black" dir="rtl"><header className="mb-10 text-center">
+      <h1 className="text-3xl font-black text_black">اختر الباقة المناسبة لك</h1>
       <p className="mt-3 text-slate-500">باقات تساعدك على تنمية متجرك وإدارة طلباتك.</p>
     </header><section className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
       {plans.map((plan) => (

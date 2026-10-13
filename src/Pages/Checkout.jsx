@@ -46,6 +46,17 @@ export default function Checkout() {
       });
       if (error) throw error;
 
+      try {
+        const queueResponse = await fetch("/api/orders/queue", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderIds: (data || []).map((order) => order.id) }),
+        });
+        if (!queueResponse.ok) throw new Error("Queue request failed");
+      } catch (queueError) {
+        console.error("Order created, but queue jobs were not scheduled:", queueError);
+      }
+
       setCreatedOrders(data || []);
       clearCart();
     } catch (error) {
