@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import AdminDashboard from "./components/admin/AdminDashboard";
 const Home = lazy(() => import("./Pages/Home"));
@@ -38,7 +38,7 @@ export default function App() {
           <Route path="/Login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
-          <Route path="/plans" element={<Plans />} />
+                <Navigate to="/vendor/dashboard?tab=branding" replace />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/store/:slug" element={<StorePage />} />

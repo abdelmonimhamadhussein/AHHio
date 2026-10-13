@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import useSubscription from "../../hooks/useSubscription";
 import { supabase } from "../../lib/supabase";
+import StoreBranding from "../../components/vendor/StoreBranding";
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const requestedTab = searchParams.get("tab");
+    return ["products", "branding", "settings"].includes(requestedTab) ? requestedTab : "products";
+  });
   const [tenant, setTenant] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +45,18 @@ export default function VendorDashboard() {
     }
     load();
   }, [navigate]);
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (["products", "branding", "settings"].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams]);
+
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   const subscription = useSubscription(tenant?.id);
 
@@ -76,41 +94,68 @@ export default function VendorDashboard() {
             <Link to={`/store/${tenant.slug}`} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white">عرض المتجر</Link>
             <Link to="/vendor/add-product" className="rounded-full bg-[#E91E63] px-4 py-2 text-sm font-bold text-white">إضافة منتج</Link>
             <Link to="/dashboard/delivery_agents" className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white">مندوبين التوصيل</Link>
-            <Link to="/vendor/settings" className="rounded-full border border-[#D4AF37]/50 px-4 py-2 text-sm font-bold text-[#D4AF37]">إعدادات</Link>
+            <button onClick={() => changeTab("branding")} className="rounded-full border border-[#D4AF37]/50 px-4 py-2 text-sm font-bold text-[#D4AF37]">إعدادات</button>
           </div>
         </div>
 
-        <div className="mb-6 rounded-[24px] border border-[#D4AF37]/25 bg-[#171717] p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm text-white/60">الباقة</div>
-              <div className="text-xl font-black text-[#D4AF37]">{subscription.plan?.name || "مخصصة"}</div>
-            </div>
-            <div className="text-left">
-              <div className="text-sm text-white/60">متبقي</div>
-              <div className="text-xl font-black text-[#E91E63]">{subscription.daysLeft || 0} يوم</div>
-            </div>
-          </div>
-          <div className="mt-4 text-sm text-white/70">الحد الأقصى للمنتجات: {subscription.plan?.max_products || 0}</div>
+        <div className="mb-6 flex gap-2 border-b border-white/10" role="tablist" aria-label="أقسام لوحة المتجر">
+          {[
+            ["products", "المنتجات"],
+            ["branding", "تخصيص المتجر"],
+            ["settings", "الإعدادات"],
+          ].map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              onClick={() => changeTab(tab)}
+              className={`border-b-2 px-4 py-3 text-sm font-bold ${activeTab === tab ? "border-[#D4AF37] text-[#D4AF37]" : "border-transparent text-white/60 hover:text-white"}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        {products.length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-white/15 bg-[#171717] p-12 text-center text-white/70">
-            لا توجد منتجات حتى الآن.
+        {activeTab === "branding" ? (
+          <StoreBranding tenant={tenant} />
+        ) : activeTab === "settings" ? (
+          <div className="rounded-[24px] border border-[#D4AF37]/25 bg-[#171717] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="text-sm text-white/60">الباقة الحالية</div>
+                <div className="text-xl font-black text-[#D4AF37]">{subscription.plan?.name || "مخصصة"}</div>
+                <div className="mt-2 text-sm text-white/70">الحد الأقصى للمنتجات: {subscription.plan?.max_products || 0}</div>
+              </div>
+              <div className="text-left">
+                <div className="text-sm text-white/60">متبقي</div>
+                <div className="text-xl font-black text-[#E91E63]">{subscription.daysLeft || 0} يوم</div>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link to="/vendor/billing" className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white">الفواتير والاشتراك</Link>
+              <Link to="/dashboard/delivery_agents" className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white">إدارة مندوبي التوصيل</Link>
+            </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {products.map((product) => (
-              <article key={product.id} className="overflow-hidden rounded-[24px] border border-white/10 bg-[#171717]">
-                <img src={product.images?.[0] || product.image_url || "https://placehold.co/600x400/111/D4AF37?text=AHHio"} alt={product.name} className="h-48 w-full object-cover" />
-                <div className="p-4">
-                  <h3 className="font-bold text-white">{product.name}</h3>
-                  <p className="mt-2 text-lg font-black text-[#E91E63]">{Number(product.price || 0).toLocaleString()} SDG</p>
-                  <p className="mt-2 text-sm text-white/60">المخزون: {product.stock || 0}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+          products.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-white/15 bg-[#171717] p-12 text-center text-white/70">
+              لا توجد منتجات حتى الآن.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {products.map((product) => (
+                <article key={product.id} className="overflow-hidden rounded-[24px] border border-white/10 bg-[#171717]">
+                  <img src={product.images?.[0] || product.image_url || "https://placehold.co/600x400/111/D4AF37?text=AHHio"} alt={product.name} className="h-48 w-full object-cover" />
+                  <div className="p-4">
+                    <h3 className="font-bold text-white">{product.name}</h3>
+                    <p className="mt-2 text-lg font-black text-[#E91E63]">{Number(product.price || 0).toLocaleString()} SDG</p>
+                    <p className="mt-2 text-sm text-white/60">المخزون: {product.stock || 0}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>
