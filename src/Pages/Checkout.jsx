@@ -12,10 +12,13 @@ export default function Checkout() {
   const [submitError, setSubmitError] = useState("");
   const [createdOrders, setCreatedOrders] = useState([]);
 
+  const getRealTenantId = (key) => key === "__NO_TENANT__" ? null : key;
+
   const grouped = items.reduce((acc, item) => {
     const tenantId = item.tenant_id || item.vendor_id || null;
-    if (!acc[tenantId]) acc[tenantId] = [];
-    acc[tenantId].push(item);
+    const key = tenantId || "__NO_TENANT__";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
     return acc;
   }, {});
 
@@ -33,8 +36,8 @@ export default function Checkout() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const requestedOrders = Object.entries(grouped).map(([tenantId, tenantItems]) => ({
-        tenant_id: tenantId,
+      const requestedOrders = Object.entries(grouped).map(([tenantKey, tenantItems]) => ({
+        tenant_id: getRealTenantId(tenantKey),
         items: tenantItems.map((item) => ({ id: item.id, qty: Number(item.qty || 1) })),
       }));
       const { data, error } = await supabase.rpc("place_marketplace_order", {
