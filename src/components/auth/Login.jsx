@@ -30,9 +30,9 @@ export default function SignIn() {
             <div className="w-full max-w-md rounded-2xl border border-sky-100 bg-white p-8 shadow-sm">
 
 
-                <h1 className="mb-6 text-center text-3xl font-bold text-sky-800">تسجيل الدخول</h1>
+                <h1 className="mb-6 text-center text-3xl font-bold text-black">تسجيل الدخول</h1>
 
-                {error && <div className="mb-4 rounded bg-red-100 p-2 text-center text-red-600">{error}</div>}
+                {error && <div className="mb-4 rounded border border-black p-2 text-center text-black">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -69,13 +69,13 @@ export default function SignIn() {
                   </button>
                 </form>
 
-              <p className="mt-4 text-center text-gray-600">
+              <p className="mt-4 text-center text-black">
                 ليس لديك حساب؟
-                <Link to="/register" className="font-bold text-sky-600">إنشاء حساب</Link>
+                <Link to="/register" className="font-bold text-black">إنشاء حساب</Link>
               </p>
-            <p className="text-center mt-2 text-gray-600">
+            <p className="text-center mt-2 text-black">
                 حساب تاجر؟
-                <Link to="/vendor" className="font-bold text-sky-600">دخول التجار</Link>
+                <Link to="/vendor/login" className="font-bold text-black">دخول التجار</Link>
             </p>
             </div>
         </div>

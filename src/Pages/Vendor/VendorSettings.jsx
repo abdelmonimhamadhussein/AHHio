@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 
 const cityOptions = ["امدرمان", "الخرطوم بحري", "بورتسودان", "مدني", "كسلا", "القضارف"];
-const themeColors = ["#E91E63", "#111111", "#D4AF37"];
+const themeColors = ["#0EA5E9"];
 
 export default function VendorSettings() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function VendorSettings() {
     delivery_fee: "0",
     whatsapp_number: "",
     instagram: "",
-    theme_color: "#E91E63",
+    theme_color: "#0EA5E9",
     logo_url: "",
     banner_url: "",
   });
@@ -46,7 +46,7 @@ export default function VendorSettings() {
         delivery_fee: String(data.delivery_fee ?? 0),
         whatsapp_number: data.whatsapp_number || "",
         instagram: data.instagram || "",
-        theme_color: data.theme_color || "#E91E63",
+        theme_color: data.theme_color || "#0EA5E9",
         logo_url: data.logo_url || "",
         banner_url: data.banner_url || "",
       });
@@ -118,60 +118,60 @@ export default function VendorSettings() {
     alert("تم حفظ إعدادات المتجر بنجاح");
   };
 
-  if (!tenant) return <div className="p-10 text-center text-[#D4AF37]">...جاري التحميل</div>;
+  if (!tenant) return <div className="p-10 text-center text-black">...جاري التحميل</div>;
 
   return (
-    <div dir="rtl" className="mx-auto max-w-4xl px-4 py-8 text-white">
+    <div dir="rtl" className="mx-auto max-w-4xl px-4 py-8 text-black">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-black text-[#D4AF37]">تخصيص المتجر</h1>
-        <button onClick={() => window.open(previewUrl, "_blank")} className="rounded-full border border-[#D4AF37]/50 px-4 py-2 text-sm font-bold text-[#D4AF37]">معاينة</button>
+        <h1 className="text-3xl font-black text-black">تخصيص المتجر</h1>
+        <button onClick={() => window.open(previewUrl, "_blank")} className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white hover:bg-[#0284C7]">معاينة</button>
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-[#171717] p-6">
+      <div className="rounded-lg border border-black bg-white p-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <input value={form.store_name} onChange={(e) => setForm({ ...form, store_name: e.target.value })} placeholder="اسم المتجر" className="rounded-2xl border border-white/10 bg-white/5 p-3 outline-none" />
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="mb-2 text-sm text-white/60">slug</div>
-            <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="store-name" className="w-full bg-transparent outline-none" />
-            <div className={`mt-2 text-xs ${slugStatus === "taken" ? "text-red-400" : "text-[#D4AF37]"}`}>
+          <input value={form.store_name} onChange={(e) => setForm({ ...form, store_name: e.target.value })} placeholder="اسم المتجر" className="rounded-lg border border-black bg-white p-3 text-black outline-none" />
+          <div className="rounded-lg border border-black bg-white p-3">
+            <div className="mb-2 text-sm text-black">slug</div>
+            <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="store-name" className="w-full bg-white text-black outline-none" />
+            <div className="mt-2 text-xs text-black">
               {slugStatus === "taken" ? "هذا الرابط مستخدم" : slugStatus === "available" ? "الرابط متاح" : "يتم فحص الرابط..."}
             </div>
           </div>
 
-          <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="rounded-2xl border border-white/10 bg-white/5 p-3 outline-none">
+          <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="rounded-lg border border-black bg-white p-3 text-black outline-none">
             {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
           </select>
-          <input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} placeholder="رقم الحساب البنكي" className="rounded-2xl border border-white/10 bg-white/5 p-3 outline-none" />
+          <input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} placeholder="رقم الحساب البنكي" className="rounded-lg border border-black bg-white p-3 text-black outline-none" />
 
-          <input value={form.whatsapp_number} onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })} placeholder="واتساب بدون 0" className="rounded-2xl border border-white/10 bg-white/5 p-3 outline-none" />
-          <input value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value })} placeholder="Instagram" className="rounded-2xl border border-white/10 bg-white/5 p-3 outline-none" />
+          <input value={form.whatsapp_number} onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })} placeholder="واتساب بدون 0" className="rounded-lg border border-black bg-white p-3 text-black outline-none" />
+          <input value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value })} placeholder="Instagram" className="rounded-lg border border-black bg-white p-3 text-black outline-none" />
         </div>
 
-        <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} placeholder="وصف المتجر" className="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 p-3 outline-none" />
+        <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} placeholder="وصف المتجر" className="mt-4 w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 text-sm text-white/60">شعار المتجر (2MB)</div>
+          <div className="rounded-lg border border-black bg-white p-4">
+            <div className="mb-3 text-sm text-black">شعار المتجر (2MB)</div>
             <input ref={logoInput} type="file" accept="image/*" onChange={(e) => uploadFile("logo", e.target.files?.[0])} className="hidden" />
-            <button onClick={() => logoInput.current?.click()} className="rounded-full bg-[#E91E63] px-4 py-2 text-sm font-bold text-white">رفع الشعار</button>
+            <button onClick={() => logoInput.current?.click()} className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white hover:bg-[#0284C7]">رفع الشعار</button>
             {form.logo_url && <img src={form.logo_url} alt="logo" className="mt-3 h-20 w-20 rounded-full object-cover" />}
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 text-sm text-white/60">بانر المتجر (5MB)</div>
+          <div className="rounded-lg border border-black bg-white p-4">
+            <div className="mb-3 text-sm text-black">بانر المتجر (5MB)</div>
             <input ref={bannerInput} type="file" accept="image/*" onChange={(e) => uploadFile("banner", e.target.files?.[0])} className="hidden" />
-            <button onClick={() => bannerInput.current?.click()} className="rounded-full bg-[#D4AF37] px-4 py-2 text-sm font-bold text-[#111111]">رفع البانر</button>
+            <button onClick={() => bannerInput.current?.click()} className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white hover:bg-[#0284C7]">رفع البانر</button>
             {form.banner_url && <img src={form.banner_url} alt="banner" className="mt-3 h-24 w-full rounded-2xl object-cover" />}
           </div>
         </div>
 
-        <label className="mb-5 block rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/60">
+        <label className="mb-5 block rounded-lg border border-black bg-white p-3 text-sm text-black">
           رسوم التوصيل (جنيه)
-          <input type="number" min="0" step="0.01" value={form.delivery_fee} onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })} className="mt-2 w-full bg-transparent text-white outline-none" />
+          <input type="number" min="0" step="0.01" value={form.delivery_fee} onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })} className="mt-2 w-full bg-white text-black outline-none" />
         </label>
 
         <div className="mt-5">
-          <div className="mb-3 text-sm text-white/60">لون السمة</div>
+          <div className="mb-3 text-sm text-black">لون السمة</div>
           <div className="flex gap-3">
             {themeColors.map((color) => (
               <button key={color} onClick={() => setForm({ ...form, theme_color: color })} className={`h-10 w-10 rounded-full border-2 ${form.theme_color === color ? "border-white" : "border-transparent"}`} style={{ background: color }} />
@@ -179,7 +179,7 @@ export default function VendorSettings() {
           </div>
         </div>
 
-        <button onClick={save} className="mt-6 w-full rounded-full bg-[#E91E63] px-5 py-3 font-black text-white">{saving ? "...جار الحفظ" : "حفظ التغييرات"}</button>
+        <button onClick={save} className="mt-6 w-full rounded-lg bg-[#0EA5E9] px-5 py-3 font-black text-white hover:bg-[#0284C7]">{saving ? "...جار الحفظ" : "حفظ التغييرات"}</button>
       </div>
     </div>
   );

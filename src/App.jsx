@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
-import AdminDashboard from "./components/admin/AdminDashboard";
+const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
 const Home = lazy(() => import("./Pages/Home"));
 const ShopPage = lazy(() => import("./components/product/ShopPage"));
 const ProductDetails = lazy(() => import("./components/product/ProductDetails"));
@@ -28,103 +28,39 @@ const EditProduct = lazy(() => import("./components/product/EditProduct"));
 
 export default function App() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#111111] text-white">
+    <div className="flex min-h-screen flex-col bg-white text-black">
       <ScrollToTop />
       <Navbar />
 
-      <main className="container mx-auto flex-1 p-4">
+      <main className="w-full flex-1">
         <Suspense fallback={<div role="status" className="p-12 text-center">جارٍ تحميل الصفحة...</div>}>
-        <Routes>
-          <Route path="/Login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Home />} />
-                <Navigate to="/vendor/dashboard?tab=branding" replace />
-          <Route path="/shop" element={<ShopPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/store/:slug" element={<StorePage />} />
-          <Route path="/:slug" element={<StorePage />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
-          <Route path="/cart" element={<CartPage />} />
-
-          <Route
-            path="/admin/dashboard"
-            element={
-              <PrivateRoute allowedRoles={['admin']}>
-                <AdminDashboard />
-              </PrivateRoute>
-            }
-          />
-
-          <Route path="/vendor" element={<VendorLogin />} />
-          <Route
-            path="/vendor/renew"
-            element={
-              <PrivateRoute allowedRoles={["vendor"]}>
-                <Renew />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/vendor/dashboard"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <VendorDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/vendor/add-product"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <AddProduct />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/vendor/edit-product/:id"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <EditProduct />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/vendor/settings"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <VendorSettings />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard/delivery_agents"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <DeliveryAgents />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/vendor/billing"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <Billing />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/:slug/orders"
-            element={
-              <PrivateRoute allowedRoles={['vendor']}>
-                <VendorOrders />
-              </PrivateRoute>
-            }
-          />
-
-          <Route path="/notfound" element={<Notfound />} />
-        </Routes>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/Login" element={<Navigate to="/login" replace />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/vendor/login" element={<VendorLogin />} />
+            <Route path="/vendor" element={<PrivateRoute allowedRoles={["vendor"]}><VendorDashboard /></PrivateRoute>} />
+            <Route path="/vendor/dashboard" element={<PrivateRoute allowedRoles={["vendor"]}><VendorDashboard /></PrivateRoute>} />
+            <Route path="/vendor/orders" element={<PrivateRoute allowedRoles={["vendor"]}><VendorOrders /></PrivateRoute>} />
+            <Route path="/vendor/settings" element={<PrivateRoute allowedRoles={["vendor"]}><VendorSettings /></PrivateRoute>} />
+            <Route path="/vendor/delivery" element={<PrivateRoute allowedRoles={["vendor"]}><DeliveryAgents /></PrivateRoute>} />
+            <Route path="/vendor/billing" element={<PrivateRoute allowedRoles={["vendor"]}><Billing /></PrivateRoute>} />
+            <Route path="/vendor/renew" element={<PrivateRoute allowedRoles={["vendor"]}><Renew /></PrivateRoute>} />
+            <Route path="/vendor/add-product" element={<PrivateRoute allowedRoles={["vendor"]}><AddProduct /></PrivateRoute>} />
+            <Route path="/vendor/edit-product/:id" element={<PrivateRoute allowedRoles={["vendor"]}><EditProduct /></PrivateRoute>} />
+            <Route path="/store/:slug" element={<StorePage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={["admin"]}><AdminDashboard /></PrivateRoute>} />
+            <Route path="/notfound" element={<Notfound />} />
+            <Route path="*" element={<Notfound />} />
+          </Routes>
         </Suspense>
       </main>
 

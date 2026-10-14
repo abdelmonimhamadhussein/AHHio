@@ -1,16 +1,17 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../components/context/CartContext";
 import { supabase } from "../lib/supabase";
 
 export default function Checkout() {
   const { items, clearCart } = useCart();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [createdOrders, setCreatedOrders] = useState([]);
 
   const getRealTenantId = (key) => key === "__NO_TENANT__" ? null : key;
 
@@ -60,8 +61,13 @@ export default function Checkout() {
         console.error("Order created, but queue jobs were not scheduled:", queueError);
       }
 
-      setCreatedOrders(data || []);
       clearCart();
+      navigate("/order-success", {
+        state: {
+          orders: data || [],
+          customer: { name, phone, city, address },
+        },
+      });
     } catch (error) {
       setSubmitError(error.message || "تعذر إرسال الطلب");
     } finally {
@@ -69,53 +75,32 @@ export default function Checkout() {
     }
   };
 
-  if (createdOrders.length > 0) {
-    return (
-      <div dir="rtl" className="mx-auto max-w-2xl p-10 text-center text-white">
-        <h1 className="text-2xl font-black text-[#D4AF37]">تم إرسال طلبك</h1>
-        <p className="mt-2 text-white/70">أرسل تفاصيل كل طلب إلى المتجر عبر واتساب:</p>
-        <div className="mt-6 grid gap-3">
-          {createdOrders.map((order) => {
-            const rawPhone = String(order.whatsapp_number || "249910070934").replace(/\D/g, "");
-            const whatsappPhone = rawPhone.startsWith("249") ? rawPhone : `249${rawPhone.replace(/^0+/, "")}`;
-            const message = `طلب جديد ${order.id}\nالعميل: ${name}\nرقم الهاتف: ${phone}\nالمدينة: ${city}\nالعنوان: ${address}\nالإجمالي: ${Number(order.total).toLocaleString()} SDG`;
-            return (
-              <a key={order.id} href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" className="rounded-lg bg-green-600 px-4 py-3 font-bold text-white">
-                مراسلة {order.store_name}
-              </a>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  if (items.length === 0) return <div className="p-20 text-center text-[#D4AF37]">السلة فارغة</div>;
+  if (items.length === 0) return <div className="p-20 text-center text-black">السلة فارغة <Link to="/shop" className="text-black underline">تصفح المتجر</Link></div>;
 
   return (
-    <div dir="rtl" className="mx-auto max-w-2xl px-4 py-8">
-      <div className="rounded-[28px] border border-white/10 bg-[#171717] p-6">
-        <h1 className="mb-5 text-3xl font-black text-[#D4AF37]">إتمام الطلب</h1>
+    <div dir="rtl" className="mx-auto max-w-2xl px-4 py-8 text-black">
+      <div className="rounded-lg border border-black bg-white p-6">
+        <h1 className="mb-5 text-3xl font-black text-black">إتمام الطلب</h1>
 
         <div className="space-y-3">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسم العميل" className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none" />
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الهاتف" className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none" />
-          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="المدينة" className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none" />
-          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان" className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none" />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسم العميل" className="w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الهاتف" className="w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
+          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="المدينة" className="w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
+          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان" className="w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
         </div>
 
-        {submitError && <p role="alert" className="mt-4 rounded-lg bg-red-950 p-3 text-red-200">{submitError}</p>}
+        {submitError && <p role="alert" className="mt-4 rounded-lg border border-black bg-white p-3 text-black">{submitError}</p>}
 
-        <div className="mt-5 rounded-[20px] bg-[#111111] p-4 text-white/80">
+        <div className="mt-5 rounded-lg border border-black bg-white p-4 text-black">
           <div>عدد المتاجر: {Object.keys(grouped).length}</div>
           <div className="mt-3 flex justify-between text-sm"><span>المجموع الفرعي</span><span>{subtotal.toLocaleString()} SDG</span></div>
           <div className="mt-2 flex justify-between text-sm"><span>رسوم التوصيل</span><span>{deliveryFee.toLocaleString()} SDG</span></div>
           <div className="mt-2 flex justify-between text-sm"><span>الضريبة</span><span>{tax.toLocaleString()} SDG</span></div>
-          <div className="mt-3 border-t border-white/10 pt-3 text-2xl font-black text-[#E91E63]">الإجمالي: {total.toLocaleString()} SDG</div>
+          <div className="mt-3 border-t border-black pt-3 text-2xl font-black text-black">الإجمالي: {total.toLocaleString()} SDG</div>
         </div>
 
-        <button onClick={handleOrder} disabled={submitting} className="mt-6 w-full rounded-full bg-[#E91E63] px-5 py-3 text-lg font-black text-white disabled:opacity-60">
-          {submitting ? "جارٍ إرسال الطلب..." : "إرسال الطلب"}
+        <button onClick={handleOrder} disabled={submitting} className="mt-6 w-full rounded-lg bg-[#0EA5E9] px-5 py-3 text-lg font-black text-white hover:bg-[#0284C7] disabled:opacity-60">
+          {submitting ? "جارٍ إرسال الطلب..." : "تأكيد الطلب"}
         </button>
       </div>
     </div>

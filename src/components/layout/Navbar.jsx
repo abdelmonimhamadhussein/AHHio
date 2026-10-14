@@ -24,22 +24,22 @@ export default function Navbar() {
   };
 
   return (
-    <nav dir='rtl' className='sticky top-0 z-50 border-b border-sky-200 bg-sky-500 shadow-md shadow-sky-200/60'>
-      <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5'>
+    <nav dir='rtl' className='sticky top-0 z-50 border-b border-black bg-sky-500 text-white'>
+      <div className='mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-2 px-4 py-2.5'>
         <Link to='/' className='text-2xl font-bold text-white'>AHHio</Link>
 
-        <div className='hidden gap-6 md:flex'>
-          <Link to='/' className='text-sm font-medium text-sky-50 transition hover:text-white'>الرئيسية</Link>
-          <Link to='/shop' className='text-sm font-medium text-sky-50 transition hover:text-white'>المتجر</Link>
-          <Link to='/plans' className='text-sm font-medium text-sky-50 transition hover:text-white'>الباقات</Link>
-          <Link to='/vendor' className='text-sm font-medium text-emerald-100 transition hover:text-white'>دخول التجار</Link>
+        <div className='order-3 flex w-full justify-center gap-4 text-xs sm:text-sm md:order-none md:w-auto md:gap-6'>
+          <Link to='/' className='text-sm font-medium text-white'>الرئيسية</Link>
+          <Link to='/shop' className='text-sm font-medium text-white'>المتجر</Link>
+          <Link to='/plans' className='text-sm font-medium text-white'>الخطط</Link>
+          <Link to='/vendor' className='text-sm font-medium text-white'>لوحة التاجر</Link>
         </div>
 
         <div className='flex items-center gap-4'>
-          <Link to='/cart' className='relative text-white'>
+          <Link to='/cart' aria-label='السلة' className='relative rounded-lg bg-sky-500 px-3 py-2 text-white'>
             <ShoppingCart size={24} />
             {totalItems > 0 && (
-              <span className='absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white'>
+              <span className='absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-black text-xs font-bold text-white'>
                 {totalItems}
               </span>
             )}
@@ -48,13 +48,13 @@ export default function Navbar() {
           {user ? (
             <div className='flex items-center gap-2'>
               {isVendor && (
-                <Link to='/vendor/dashboard' className='flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 text-sm font-medium text-white'>
+                  <Link to='/vendor' className='flex items-center gap-1 rounded bg-sky-500 px-3 py-1 text-sm font-medium text-white'>
                   <LayoutDashboard size={16} /> لوحتي
                 </Link>
               )}
 
               {user?.role === 'admin' && (
-                <Link to='/admin/dashboard' className='flex items-center gap-1 rounded bg-slate-900 px-3 py-1 text-sm font-medium text-white'>
+                <Link to='/admin/dashboard' className='flex items-center gap-1 rounded bg-black px-3 py-1 text-sm font-medium text-white'>
                   <Store size={16} /> الادمن
                 </Link>
               )}
@@ -65,8 +65,8 @@ export default function Navbar() {
             </div>
           ) : (
             <div className='flex gap-2'>
-              <Link to='/Login' className='rounded border border-white/40 px-3 py-1.5 text-sm font-medium text-white'>دخول</Link>
-              <Link to='/register' className='rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white'>إنشاء حساب</Link>
+              <Link to='/login' className='rounded border border-white px-3 py-1.5 text-sm font-medium text-white'>دخول</Link>
+              <Link to='/register' className='rounded bg-sky-500 px-3 py-1.5 text-sm font-medium text-white'>سجل</Link>
             </div>
           )}
         </div>

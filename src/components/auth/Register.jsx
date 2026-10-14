@@ -63,7 +63,7 @@ export default function Register() {
           phone: whatsapp.trim(),
           whatsapp_number: whatsapp.trim(),
           status: "active",
-          theme_color: "#E91E63",
+          theme_color: "#0EA5E9",
           city: "",
           is_verified: false,
           rating: 0,
@@ -73,7 +73,7 @@ export default function Register() {
       }
 
       localStorage.setItem("tenant", JSON.stringify(tenantData));
-      navigate("/vendor/dashboard");
+      navigate("/vendor");
 
     } catch (err) {
       console.error(err);
@@ -84,41 +84,49 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 text-black">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
         <h2 className="text-2xl font-bold text-center mb-2">إنشاء حساب جديد</h2>
-        {selectedPlan && <p className="text-center text-sm text-pink-600 mb-4">الباقة: {selectedPlan.name}</p>}
+        {selectedPlan && <p className="text-center text-sm text-black mb-4">الباقة: {selectedPlan.name}</p>}
 
-        <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
-          <button type="button" onClick={() => setAccountType("customer")} className={`flex-1 py-2 rounded-md text-sm font-medium ${accountType === "customer"? "bg-white shadow text-black" : "text-gray-500"}`}>زبون</button>
-          <button type="button" onClick={() => setAccountType("vendor")} className={`flex-1 py-2 rounded-md text-sm font-medium ${accountType === "vendor"? "bg-white shadow text-black" : "text-gray-500"}`}>تاجر</button>
+        <div className="flex gap-2 mb-6 border border-black p-1 rounded-lg">
+          <button type="button" onClick={() => setAccountType("customer")} className={`flex-1 py-2 rounded-md text-sm font-medium ${accountType === "customer" ? "bg-[#0EA5E9] text-white hover:bg-[#0284C7]" : "bg-white text-black"}`}>زبون</button>
+          <button type="button" onClick={() => setAccountType("vendor")} className={`flex-1 py-2 rounded-md text-sm font-medium ${accountType === "vendor" ? "bg-[#0EA5E9] text-white hover:bg-[#0284C7]" : "bg-white text-black"}`}>تاجر</button>
         </div>
 
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">{error}</div>}
+        {error && <div className="border border-black text-black p-3 rounded-lg text-sm mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {accountType === "customer"? (
             <>
-              <input type="text" placeholder="الاسم الكامل" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full p-3 border rounded-lg" />
-              <input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 border rounded-lg" />
-              <input type="password" placeholder="كلمة السر" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="text" placeholder="الاسم الكامل" value={fullName} onChange={(e) => setFullName(e.target.value)}
+               required className="w-full p-3 border rounded-lg text-black" />
+              <input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} 
+              required className="w-full p-3 border rounded-lg text-black" />
+              <input type="password" placeholder="كلمة السر" value={password} onChange={(e) => setPassword(e.target.value)}
+               required className="w-full p-3 border rounded-lg text-black" />
             </>
           ) : (
             <>
-              <input type="text" placeholder="اسم المتجر" value={storeName} onChange={(e) => setStoreName(e.target.value)} required className="w-full p-3 border rounded-lg" />
-              <input type="text" placeholder="رابط المتجر (انجليزي فقط) مثل: mystore" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} required className="w-full p-3 border rounded-lg" />
-              <input type="text" placeholder="رقم الواتساب" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="w-full p-3 border rounded-lg" />
-              <input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 border rounded-lg" />
-              <input type="password" placeholder="كلمة السر (6+ وفيها رقم)" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 border rounded-lg" />
+              <input type="text" placeholder="اسم المتجر" value={storeName} onChange={(e) => setStoreName(e.target.value)}
+               required className="w-full p-3 border rounded-lg" />
+              <input type="text" placeholder="رابط المتجر (انجليزي فقط) مثل: mystore" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())}
+               required className="w-full p-3 border rounded-lg text-black" />
+              <input type="text" placeholder="رقم الواتساب" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)}
+               required className="w-full p-3 border rounded-lg text-black" />
+              <input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} 
+              required className="w-full p-3 border rounded-lg text-black" />
+              <input type="password" placeholder="كلمة السر (6+ وفيها رقم)" value={password} onChange={(e) => setPassword(e.target.value)}
+              required className="w-full p-3 border rounded-lg text-black" />
             </>
           )}
-          <button type="submit" disabled={loading} className="w-full bg-pink-600 text-white py-3 rounded-lg font-bold hover:bg-pink-700 disabled:opacity-50">
+          <button type="submit" disabled={loading} className="w-full bg-[#0EA5E9] text-white py-3 rounded-lg font-bold hover:bg-[#0284C7] disabled:opacity-50">
             {loading? "جاري الإنشاء..." : "إنشاء حساب"}
           </button>
         </form>
 
-        <p className="text-center text-sm mt-6 text-gray-500">
-          لديك حساب؟ <Link to="/login" className="text-pink-600 font-bold">تسجيل دخول</Link>
+        <p className="text-center text-sm mt-6 text-black">
+          لديك حساب؟ <Link to={accountType === "vendor" ? "/vendor/login" : "/login"} className="text-black font-bold">تسجيل دخول</Link>
         </p>
       </div>
     </div>

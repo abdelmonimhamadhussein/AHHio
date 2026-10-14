@@ -138,7 +138,7 @@ export default function AddProduct() {
           ? "تم ارسال المنتج للمراجعة لأن فيه كلمة ممنوعة"
           : "تم نشر المنتج بنجاح"
       );
-      window.location.href = "/vendor/dashboard";
+      window.location.href = "/vendor";
     } catch (error) {
       alert(error.message || "حدث خطأ أثناء رفع المنتج");
     } finally {
@@ -147,7 +147,7 @@ export default function AddProduct() {
   }
 
   if (!allowed) {
-    return <div className="vendor-page text-center text-slate-600">...جاري التحقق من الاشتراك</div>;
+    return <div className="vendor-page text-center text-black">...جاري التحقق من الاشتراك</div>;
   }
 
   return (
@@ -204,8 +204,8 @@ export default function AddProduct() {
             onChange={(e) => setFiles(Array.from(e.target.files).slice(0, Math.min(5, remainingImages)))}
             className="vendor-input mt-1"
           />
-          <p className="mt-2 text-xs text-slate-500">يقبل الصور فقط، ويمكنك اختيار أكثر من صورة.</p>
-          {remainingImages === 0 && <a href="/plans" className="text-sm font-bold text-blue-600">ترقية الباقة</a>}
+          <p className="mt-2 text-xs text-black">يقبل الصور فقط، ويمكنك اختيار أكثر من صورة.</p>
+          {remainingImages === 0 && <a href="/plans" className="text-sm font-bold text-black">ترقية الباقة</a>}
         </div>
 
         <button type="submit" disabled={loading} className="vendor-btn">

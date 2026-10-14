@@ -35,20 +35,20 @@ export default function VendorLogin() {
     }
 
     localStorage.setItem("tenant", JSON.stringify(data));
-    navigate(`/vendor/dashboard`);
+    navigate("/vendor");
   };
 
   return (
     <div className="mx-auto max-w-md rounded-2xl border border-sky-100 bg-white p-6 shadow-sm sm:p-10">
-      <h1 className="mb-6 text-2xl font-bold text-sky-800">دخول التجار</h1>
-      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="البريد الإلكتروني" className="mb-3 w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500" />
-      <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="اسم المتجر" className="mb-3 w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500" />
-      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="كلمة السر" className="mb-3 w-full rounded-xl border border-sky-100 bg-sky-50 p-3 outline-none focus:border-sky-500" />
-      <button onClick={handleLogin} disabled={loading} className="w-full rounded-xl bg-sky-500 py-3 text-white hover:bg-sky-600">
+      <h1 className="mb-6 text-2xl font-bold text-black">دخول التجار</h1>
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="البريد الإلكتروني" className="mb-3 w-full rounded-lg border border-black bg-white p-3 text-black outline-none focus:border-sky-500" />
+      <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="اسم المتجر" className="mb-3 w-full rounded-lg border border-black bg-white p-3 text-black outline-none focus:border-sky-500" />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="كلمة السر" className="mb-3 w-full rounded-lg border border-black bg-white p-3 text-black outline-none focus:border-sky-500" />
+      <button onClick={handleLogin} disabled={loading} className="w-full rounded-lg bg-[#0EA5E9] py-3 text-white hover:bg-[#0284C7]">
         {loading ? "...جاري الدخول" : "دخول"}
       </button>
       <p className="mt-4 text-center text-sm text-slate-600">
-        ليس لديك حساب تاجر؟ <Link to="/register?type=vendor" className="font-bold text-sky-700">سجّل متجرك</Link>
+        ليس لديك حساب تاجر؟ <Link to="/register?type=vendor" className="font-bold text-black">سجّل متجرك</Link>
       </p>
     </div>
   );

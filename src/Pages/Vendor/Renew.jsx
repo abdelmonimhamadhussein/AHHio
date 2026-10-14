@@ -115,7 +115,7 @@ export default function Renew() {
         <div>
           <p className="vendor-subtitle">تجديد الاشتراك</p>
           <h1 className="vendor-title">تجديد {plan?.name || "الباقة"} لمدة 30 يوم</h1>
-          <p className="mt-2 text-sm text-slate-600">المبلغ: {plan?.price ?? "..."} جنيه - الحساب البنكي: 3496179</p>
+          <p className="mt-2 text-sm text-black">المبلغ: {plan?.price ?? "..."} جنيه - الحساب البنكي: 3496179</p>
         </div>
 
         <div>
@@ -141,7 +141,7 @@ export default function Renew() {
             accept="image/*"
             type="file"
             required
-            className="vendor-input file:mr-4 file:rounded file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
+            className="vendor-input file:mr-4 file:rounded file:border-0 file:bg-[#0EA5E9] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
           />
         </div>
 
@@ -149,10 +149,10 @@ export default function Renew() {
           <div
             className={`rounded-xl border px-3 py-2 text-sm ${
               messageType === "success"
-                ? "border-green-200 bg-green-50 text-green-700"
+                ? "border-black bg-white text-black"
                 : messageType === "error"
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-blue-200 bg-blue-50 text-blue-700"
+                  ? "border-black bg-white text-black"
+                  : "border-black bg-white text-black"
             }`}
           >
             {message}

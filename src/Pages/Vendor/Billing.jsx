@@ -83,26 +83,26 @@ export default function Billing() {
 
   return (
     <div dir="rtl" className="mx-auto max-w-xl px-4 py-8">
-      <div className="rounded-[28px] border border-white/10 bg-[#171717] p-6">
-        <h1 className="text-3xl font-black text-[#D4AF37]">الفوترة</h1>
-        <div className="mt-4 rounded-[24px] border border-[#D4AF37]/25 bg-[#111111] p-4">
-          <div className="text-sm text-white/70">رقم الحساب</div>
+      <div className="rounded-lg border border-black bg-white p-6 text-black">
+        <h1 className="text-3xl font-black text-black">الفوترة</h1>
+        <div className="mt-4 rounded-lg border border-black bg-white p-4">
+          <div className="text-sm text-black">رقم الحساب</div>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <div className="text-xl font-black text-white">{tenant?.bank_account || "3496179"}</div>
+            <div className="text-xl font-black text-black">{tenant?.bank_account || "3496179"}</div>
             <button onClick={() => navigator.clipboard?.writeText(tenant?.bank_account || "3496179")}
-             className="rounded-full bg-[#E91E63] px-4 py-2 text-sm font-bold text-white">نسخ</button>
+             className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white hover:bg-[#0284C7]">نسخ</button>
           </div>
         </div>
 
         <div className="mt-5 space-y-3">
-          <input value={txnNumber} onChange={(e) => setTxnNumber(e.target.value)} placeholder="رقم المعاملة" className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none" />
-          <p className="text-white/70">الباقة: {plan.name}، المبلغ المطلوب: {plan.price.toLocaleString()} جنيه</p>
-          <input type="file" accept="image/*" onChange={handleFile} className="w-full rounded-2xl border border-dashed border-white/20 bg-white/5 p-3 text-white/70" />
-          {preview && <img src={preview} alt="preview" className="h-52 w-full rounded-2xl object-cover" />}
+          <input value={txnNumber} onChange={(e) => setTxnNumber(e.target.value)} placeholder="رقم المعاملة" className="w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
+          <p className="text-black">الباقة: {plan.name}، المبلغ المطلوب: {plan.price.toLocaleString()} جنيه</p>
+          <input type="file" accept="image/*" onChange={handleFile} className="w-full rounded-lg border border-dashed border-black bg-white p-3 text-black" />
+          {preview && <img src={preview} alt="preview" className="h-52 w-full rounded-lg object-cover" />}
         </div>
 
-        {message && <p role="status" className="mt-4 rounded-xl bg-white/10 p-3 text-sm text-white">{message}</p>}
-        <button onClick={submit} disabled={loading} className="mt-6 w-full rounded-full bg-[#D4AF37] px-5 py-3 font-black text-[#111111]">{loading ? "...جاري التحديث" : "تأكيد الدفع"}</button>
+        {message && <p role="status" className="mt-4 rounded-lg border border-black bg-white p-3 text-sm text-black">{message}</p>}
+        <button onClick={submit} disabled={loading} className="mt-6 w-full rounded-lg bg-[#0EA5E9] px-5 py-3 font-black text-white hover:bg-[#0284C7]">{loading ? "...جاري التحديث" : "تأكيد الدفع"}</button>
       </div>
     </div>
   );

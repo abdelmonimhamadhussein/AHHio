@@ -28,7 +28,8 @@ export default function PrivateRoute({ children, allowedRoles }) {
   if (loading) return <div>...جاري التحميل</div>;
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    const loginPath = allowedRoles?.includes("vendor") ? "/vendor/login" : "/login";
+    return <Navigate to={loginPath} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {

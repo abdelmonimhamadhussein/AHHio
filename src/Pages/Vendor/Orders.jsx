@@ -88,12 +88,12 @@ export default function VendorOrders() {
     <div dir="rtl" className="max-w-3xl mx-auto p-4">
       <div className="flex items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold">طلبات متجر {vendor.store_name}</h1>
-        <Link to="/vendor/dashboard" className="border px-3 py-2 rounded-lg">
+        <Link to="/vendor" className="border px-3 py-2 rounded-lg">
           لوحة التحكم
         </Link>
       </div>
 
-      {orders.length === 0 && <p className="text-center p-20 text-gray-500">لا توجد طلبات</p>}
+      {orders.length === 0 && <p className="text-center p-20 text-black">لا توجد طلبات</p>}
 
       {orders.map((order) => {
         const items = Array.isArray(order.items) ? order.items : [];
@@ -110,9 +110,7 @@ export default function VendorOrders() {
           <div className="flex justify-between gap-3">
             <p className="font-bold">#{String(order.id).slice(0, 6)}</p>
             <span className={`px-3 py-1 rounded-full text-xs ${
-              order.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-              order.status === "accepted" ? "bg-green-100 text-green-700" :
-              "bg-gray-100"
+              "border border-black text-black"
             }`}>
               {order.status === "pending" ? "جديد" : order.status === "accepted" ? "تم القبول" : order.status}
             </span>
@@ -124,7 +122,7 @@ export default function VendorOrders() {
             <p>الدفع: {order.payment_method === "cash" ? "الدفع عند الاستلام" : order.payment_method}</p>
           </div>
 
-          <div className="bg-gray-50 p-2 rounded-lg mt-3">
+          <div className="bg-white border border-black p-2 rounded-lg mt-3">
             {items.map((item, index) => (
               <div key={index} className="flex justify-between text-sm py-1">
                 <span>{item.name} x {item.qty}</span>
@@ -157,7 +155,7 @@ export default function VendorOrders() {
             value={order.delivery_agent_id || ""}
             disabled={assigningOrderId === order.id}
             onChange={(event) => assignAgent(order.id, event.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-gray-900 disabled:opacity-60"
+            className="mt-1 w-full rounded-lg border border-black bg-white p-2 text-black disabled:opacity-60"
           >
             <option value="">بدون مندوب</option>
             {agents
@@ -172,16 +170,16 @@ export default function VendorOrders() {
           <div className="flex gap-2 mt-3">
             {order.status === "pending" && (
               <>
-                <button type="button" onClick={() => updateStatus(order.id, "accepted")} className="flex-1 bg-black text-white py-2 rounded-lg">
+                <button type="button" onClick={() => updateStatus(order.id, "accepted")} className="flex-1 bg-[#0EA5E9] text-white py-2 rounded-lg hover:bg-[#0284C7]">
                   قبول
                 </button>
-                <a href={`https://wa.me/${order.phone || order.customer_phone}?text=${encodeURIComponent(`مرحبا ${order.customer_name} بخصوص طلبك`)}`} target="_blank" rel="noreferrer" className="flex-1 bg-green-600 text-white py-2 rounded-lg text-center">
+                <a href={`https://wa.me/${order.phone || order.customer_phone}?text=${encodeURIComponent(`مرحبا ${order.customer_name} بخصوص طلبك`)}`} target="_blank" rel="noreferrer" className="flex-1 bg-[#0EA5E9] text-white py-2 rounded-lg text-center hover:bg-[#0284C7]">
                   واتساب الزبون
                 </a>
               </>
             )}
             {order.status === "accepted" && (
-              <button type="button" onClick={() => updateStatus(order.id, "delivered")} className="w-full bg-green-100 text-green-700 py-2 rounded-lg font-bold">
+              <button type="button" onClick={() => updateStatus(order.id, "delivered")} className="w-full bg-[#0EA5E9] text-white py-2 rounded-lg font-bold hover:bg-[#0284C7]">
                 تم التوصيل
               </button>
             )}

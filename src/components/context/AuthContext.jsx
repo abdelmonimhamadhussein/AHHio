@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
       slug,
       whatsapp_number: whatsapp,
       status: 'active',
-      theme_color: '#E91E63',
+      theme_color: '#0EA5E9',
       city: 'امدرمان',
     }).select().single();
     setSeller(sellerData);
