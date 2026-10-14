@@ -25,8 +25,8 @@ create table if not exists public.plans (
 insert into public.plans (id, name, price, max_products, max_images, commission_percent)
 values
   ('basic', 'مجانية', 0, 10, 10, 15),
-  ('pro', 'باقة التاجر', 15000, 100, 100, 10),
-  ('vip', 'باقة VIP', 35000, 999999, 999999, 5)
+  ('pro', 'Pro', 99, 100, 100, 10),
+  ('vip', 'VIP', 199, 999999, 999999, 5)
 on conflict (id) do update set
   name = excluded.name,
   price = excluded.price,
@@ -195,7 +195,13 @@ returns trigger language plpgsql security definer set search_path = public
 as $$
 begin
   insert into public.subscriptions (tenant_id, plan_id, status, start_date, end_date, amount)
-  values (new.id, 'basic', 'active', now(), now() + interval '30 days', 0)
+  select new.id, new.plan,
+    case when plans.price > 0 then 'trial' else 'active' end,
+    now(),
+    now() + case when plans.price > 0 then interval '3 days' else interval '30 days' end,
+    plans.price
+  from public.plans
+  where plans.id = new.plan
   on conflict (tenant_id) do nothing;
   return new;
 end;
@@ -313,7 +319,7 @@ with check (
   public.is_admin()
   or (
     owner_id = auth.uid()
-    and plan = 'basic'
+    and plan = coalesce(nullif(auth.jwt()->'user_metadata'->>'plan_id', ''), 'basic')
     and status = 'active'
     and is_verified = false
   )
@@ -399,9 +405,10 @@ revoke all on public.renew_requests from anon, authenticated;
 
 revoke update on public.tenants from anon, authenticated;
 grant update (
-  owner_name, store_name, description, city, phone, whatsapp_number,
+  owner_name, store_name, slug, description, city, phone, whatsapp_number,
   bank_account, instagram, logo_url, banner_url, theme_color, delivery_fee, updated_at
 ) on public.tenants to authenticated;
+grant insert on public.tenants to authenticated;
 
 create or replace function public.place_marketplace_order(
   customer_name text,
