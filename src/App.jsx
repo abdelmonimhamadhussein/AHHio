@@ -56,7 +56,7 @@ export default function App() {
             <Route path="/vendor/add-product" element={<PrivateRoute allowedRoles={["vendor"]}><AddProduct /></PrivateRoute>} />
             <Route path="/vendor/edit-product/:id" element={<PrivateRoute allowedRoles={["vendor"]}><EditProduct /></PrivateRoute>} />
             <Route path="/store/:slug" element={<StorePage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<PrivateRoute allowedRoles={["admin"]}><AdminDashboard /></PrivateRoute>} />
             <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={["admin"]}><AdminDashboard /></PrivateRoute>} />
             <Route path="/notfound" element={<Notfound />} />
             <Route path="*" element={<Notfound />} />

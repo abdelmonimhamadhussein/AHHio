@@ -9,23 +9,45 @@ export default function PrivateRoute({ children, allowedRoles }) {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user: authUser },
+          error,
+        } = await supabase.auth.getUser();
 
-      if (user) {
-        setUser(user);
-        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        setRole(data?.role ?? user.user_metadata?.role ?? null);
-      } else {
+        if (error) throw error;
+
+        if (!authUser) {
+          setUser(null);
+          setRole(null);
+          return;
+        }
+
+        setUser(authUser);
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", authUser.id)
+          .maybeSingle();
+
+        if (profileError && profileError.code !== "PGRST116") {
+          throw profileError;
+        }
+
+        setRole(profile?.role ?? authUser.user_metadata?.role ?? null);
+      } catch (error) {
         setUser(null);
         setRole(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkUser();
   }, []);
 
-  if (loading) return <div>...جاري التحميل</div>;
+  if (loading) return <div className="p-8 text-center">...جاري التحقق من صلاحية الوصول</div>;
 
   if (!user) {
     const loginPath = allowedRoles?.includes("vendor") ? "/vendor/login" : "/login";

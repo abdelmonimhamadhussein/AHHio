@@ -24,6 +24,19 @@ npm install
 npm run dev
 ```
 
+On Windows PowerShell, if package scripts are blocked, run the project with:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+npm run dev
+```
+
+You can also use:
+
+```powershell
+npm.cmd run dev
+```
+
 ## Production build
 
 ```bash
