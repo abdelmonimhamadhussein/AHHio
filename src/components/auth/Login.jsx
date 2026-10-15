@@ -26,11 +26,11 @@ export default function Login() {
         <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">تسجيل الدخول</h1>
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">الايميل</label>
+          
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-white focus:border-blue-500 outline-none" placeholder="example@email.com" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">كلمة المرور</label>
+          
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-white focus:border-blue-500 outline-none" placeholder="••••••••" />
           </div>
           {msg && <p className="text-sm text-center text-red-500 bg-red-50 py-2 rounded">{msg}</p>}
