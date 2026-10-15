@@ -26,12 +26,16 @@ export default function Login() {
         <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">تسجيل الدخول</h1>
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-          
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-white focus:border-blue-500 outline-none" placeholder="example@email.com" />
+          <label>الايميل</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+             required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl 
+             text-black bg-blue focus:border-blue-500 outline-none" placeholder="" />
           </div>
           <div>
-          
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-white focus:border-blue-500 outline-none" placeholder="••••••••" />
+          <label>كلمة المرور</label>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+             required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-blue
+              focus:border-blue-500 outline-none" placeholder="" />
           </div>
           {msg && <p className="text-sm text-center text-red-500 bg-red-50 py-2 rounded">{msg}</p>}
           <button disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg"> {loading ? "جاري..." : "تسجيل دخول"} </button>
