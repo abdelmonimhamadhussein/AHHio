@@ -14,4 +14,5 @@ yarn-error.log*
 
 .vscde
 .idea
-.DS-store
+.DS-store.next
+.vscode
