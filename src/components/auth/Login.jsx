@@ -16,7 +16,7 @@ export default function Login() {
     setMsg("")
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) setMsg(error.message)
-    else navigate("/")
+    else navigate("/VendorDashboard")
     setLoading(false)
   }
 

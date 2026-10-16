@@ -13,7 +13,7 @@ export default function Register() {
   const handleRegister = async (e) => {
     e.preventDefault()
     setError("")
-    if(password.length < 6) return setError("كلمة السر اقل من 6")
+    if(password.length < 6) return setError("كلمة السر اقل من احرف 6")
     setLoading(true)
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -21,7 +21,7 @@ export default function Register() {
       })
       if(error) throw error
 
-      await supabase.from("merchants").insert({
+      await supabase.from("Vendors").insert({
         id: data.user.id,
         email: email.trim(),
         whatsapp
@@ -47,7 +47,8 @@ export default function Register() {
 
         <div>
           <label className="block mb-1">واتساب</label>
-          <input className="w-full border p-3 rounded" value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} placeholder="2499xxxxxxx" required />
+          <input className="w-full border p-3 rounded" value={whatsapp} onChange={e=>setWhatsapp(e.target.value)}
+           placeholder="" required />
         </div>
 
         <div>

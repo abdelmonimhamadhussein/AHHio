@@ -17,7 +17,7 @@ const VendorLogin = lazy(() => import("./Pages/Vendor/VendorLogin"));
 const VendorDashboard = lazy(() => import("./Pages/Vendor/VendorDashboard"));
 const AddProduct = lazy(() => import("./Pages/Vendor/addProduct"));
 const Billing = lazy(() => import("./Pages/Vendor/Billing"));
-const VendorSettings = lazy(() => import("./Pages/Vendor/VendorSettings"));
+const CreateStore = lazy(() => import("./Pages/Vendor/CreateStore"));
 const DeliveryAgents = lazy(() => import("./Pages/Vendor/DeliveryAgents"));
 import Footer from "./components/Footer";
 const Notfound = lazy(() => import("./Pages/Notfound"));
@@ -49,7 +49,7 @@ export default function App() {
             <Route path="/vendor" element={<PrivateRoute allowedRoles={["vendor"]}><VendorDashboard /></PrivateRoute>} />
             <Route path="/vendor/dashboard" element={<PrivateRoute allowedRoles={["vendor"]}><VendorDashboard /></PrivateRoute>} />
             <Route path="/vendor/orders" element={<PrivateRoute allowedRoles={["vendor"]}><VendorOrders /></PrivateRoute>} />
-            <Route path="/vendor/settings" element={<PrivateRoute allowedRoles={["vendor"]}><VendorSettings /></PrivateRoute>} />
+            <Route path="/vendor/CreateStore" element={<PrivateRoute allowedRoles={["vendor"]}><CreateStore /></PrivateRoute>} />
             <Route path="/vendor/delivery" element={<PrivateRoute allowedRoles={["vendor"]}><DeliveryAgents /></PrivateRoute>} />
             <Route path="/vendor/billing" element={<PrivateRoute allowedRoles={["vendor"]}><Billing /></PrivateRoute>} />
             <Route path="/vendor/renew" element={<PrivateRoute allowedRoles={["vendor"]}><Renew /></PrivateRoute>} />

@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import {createClient } from "@supabase/supabase-js";
 import { addWhatsAppJob } from "../../src/queues/whatsappQueue.js";
 import { assignRiderJob } from "../../src/queues/riderQueue.js";
 

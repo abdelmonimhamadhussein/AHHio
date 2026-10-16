@@ -11,7 +11,7 @@ export default function CreateStore() {
   const [form, setForm] = useState({
     store_name: "",
     slug: "",
-    city: "الخرطوم بحري",
+    city: "",
     bank_account: "",
     whatsapp_number: "",
   });
@@ -63,7 +63,7 @@ export default function CreateStore() {
     setSaving(false);
     if (error) { alert(error.message); return; }
     alert("تم انشاء المتجر بنجاح ✅");
-    navigate(`/vendor/store?tenant=${data.id}`);
+    navigate(`/vendor/dashboard`);
   };
 
   return (
