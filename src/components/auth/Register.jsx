@@ -27,7 +27,7 @@ export default function Register() {
         whatsapp
       })
 
-      navigate("/vendor/settings")
+      navigate("/vendor/CreateStore")
     } catch(err) {
       setError(err.message)
     } finally {

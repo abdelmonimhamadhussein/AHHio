@@ -16,7 +16,7 @@ export default function AiTools() {
         .ilike('name', `%${q.trim()}%`)
         .limit(5)
       if (error) throw error
-      if (!data?.length) setAns(`ما لقيت منتج اسمو "${q}"`)
+      if (!data?.length) setAns(`ما لقيت منتج اسمو "${q}" يا استاذ`)
       else setAns(data.map((p) => `📦 ${p.name} - ${p.price} SDG`).join('\n'))
     } catch (e) {
       setAns('خطأ: ' + e.message)
@@ -64,7 +64,7 @@ export default function AiTools() {
             <input
               value={q}
               onChange={(event) => setQ(event.target.value)}
-              placeholder="اكتب مثلا: تيشيرت"
+              placeholder=""
               aria-label="اسم المنتج"
               className="min-w-0 flex-1 rounded-full border border-gray-300 px-4 py-2.5 text-sm outline-none placeholder:text-gray-400 focus:border-[#facc15] focus:ring-2 focus:ring-[#facc15]/40"
             />
