@@ -35,7 +35,7 @@ export default function VendorLogin() {
     }
 
     localStorage.setItem("tenant", JSON.stringify(data));
-    navigate("/vendor");
+    navigate("/vendorDashboard");
   };
 
   return (

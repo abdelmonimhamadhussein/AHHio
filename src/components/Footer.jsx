@@ -27,14 +27,14 @@ export default function Footer() {
           <div>
             <h3 className='font-bold mb-4'>تواصل معنا</h3>
             <ul className='space-y-4 text-white text-sm'>
-              <li className='flex items-center gap-2 text-white'><span>📞</span><span>249910070934</span></li>
+              <li className='flex items-center gap-2 text-white'><span>📞</span><span>soon</span></li>
               <li className='flex items-center gap-2 text-white'><span>✉️</span><span>support@ahhio.com</span></li>
             </ul>
 
             <div className='flex gap-4 mt-4 text-sm text-white'>
               <a href='#' className='text-white'>فيسبوك</a>
               <a href='#' className='text-white'>إنستغرام</a>
-              <a href='https://wa.me/249910070934' className='text-white'>واتساب</a>
+              <a href='https://wa.me/soon' className='text-white'>واتساب</a>
             </div>
           </div>
         </div>

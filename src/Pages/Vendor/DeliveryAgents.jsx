@@ -19,7 +19,7 @@ export default function DeliveryAgents() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) {
-        navigate("/vendor", { replace: true });
+        navigate("/vendorDasboard", { replace: true });
         return;
       }
 

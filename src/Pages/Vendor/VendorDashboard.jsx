@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import useSubscription from "../../hooks/useSubscription";
 import { supabase } from "../../lib/supabase";
 import StoreBranding from "../../components/vendor/StoreBranding";
+import { OnboardingChecklist } from "../../components/Vendor/OnboardingChecklist";
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
@@ -65,7 +66,9 @@ export default function VendorDashboard() {
 
   if (subscription.isBlocked) {
     return (
+      
       <div dir="rtl" className="mx-auto mt-12 max-w-xl rounded-lg border border-black bg-white p-8 text-center text-black">
+       <OnboardingChecklist/>
         <h1 className="text-3xl font-black text-black">المتجر محظور</h1>
         <p className="mt-3 text-black">تم منع المتجر بسبب انتهاء الاشتراك، يرجى التواصل مع الإدارة.</p>
       </div>
