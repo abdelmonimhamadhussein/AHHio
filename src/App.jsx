@@ -13,7 +13,6 @@ import ScrollToTop from "./components/ScrollToTop";
 const CartPage = lazy(() => import("./components/cart/CartPage"));
 const Login = lazy(() => import("./components/auth/Login"));
 const Register = lazy(() => import("./components/auth/Register"));
-const VendorLogin = lazy(() => import("./Pages/Vendor/VendorLogin"));
 const VendorDashboard = lazy(() => import("./Pages/Vendor/VendorDashboard"));
 const AddProduct = lazy(() => import("./Pages/Vendor/addProduct"));
 const Billing = lazy(() => import("./Pages/Vendor/Billing"));
@@ -35,6 +34,7 @@ export default function App() {
       <main className="w-full flex-1">
         <Suspense fallback={<div role="status" className="p-12 text-center">جارٍ تحميل الصفحة...</div>}>
           <Routes>
+            {/* عامة */}
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:id" element={<ProductDetails />} />
@@ -42,22 +42,36 @@ export default function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/plans" element={<Plans />} />
+            <Route path="/store/:slug" element={<StorePage />} />
+
+            {/* Auth - مصدر واحد بس */}
             <Route path="/login" element={<Login />} />
-            <Route path="/Login" element={<Navigate to="/login" replace />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/vendor/login" element={<VendorLogin />} />
-            <Route path="/vendor" element={<PrivateRoute allowedRoles={["vendor"]}><VendorDashboard /></PrivateRoute>} />
+
+            {/* Redirects للمسارات القديمة - عشان اللينكات القديمة ما تتكسر */}
+            <Route path="/Login" element={<Navigate to="/login" replace />} />
+            <Route path="/VendorDashboard" element={<Navigate to="/vendor/dashboard" replace />} />
+            <Route path="/vendor/login" element={<Navigate to="/login" replace />} />
+            <Route path="/billing" element={<Navigate to="/vendor/billing" replace />} />
+            <Route path="/renew" element={<Navigate to="/vendor/renew" replace />} />
+            <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
+
+            {/* Vendor - كلها تحت /vendor */}
             <Route path="/vendor/dashboard" element={<PrivateRoute allowedRoles={["vendor"]}><VendorDashboard /></PrivateRoute>} />
             <Route path="/vendor/orders" element={<PrivateRoute allowedRoles={["vendor"]}><VendorOrders /></PrivateRoute>} />
-            <Route path="/vendor/CreateStore" element={<PrivateRoute allowedRoles={["vendor"]}><CreateStore /></PrivateRoute>} />
+            {/* CreateStore لازم يسمح للتاجر الجديد حتى لو vendor_status = pending */}
+            <Route path="/vendor/create-store" element={<PrivateRoute allowedRoles={["vendor"]}><CreateStore /></PrivateRoute>} />
+            <Route path="/vendor/CreateStore" element={<Navigate to="/vendor/create-store" replace />} />
             <Route path="/vendor/delivery" element={<PrivateRoute allowedRoles={["vendor"]}><DeliveryAgents /></PrivateRoute>} />
             <Route path="/vendor/billing" element={<PrivateRoute allowedRoles={["vendor"]}><Billing /></PrivateRoute>} />
             <Route path="/vendor/renew" element={<PrivateRoute allowedRoles={["vendor"]}><Renew /></PrivateRoute>} />
             <Route path="/vendor/add-product" element={<PrivateRoute allowedRoles={["vendor"]}><AddProduct /></PrivateRoute>} />
             <Route path="/vendor/edit-product/:id" element={<PrivateRoute allowedRoles={["vendor"]}><EditProduct /></PrivateRoute>} />
-            <Route path="/store/:slug" element={<StorePage />} />
+
+            {/* Admin */}
             <Route path="/admin" element={<PrivateRoute allowedRoles={["admin"]}><AdminDashboard /></PrivateRoute>} />
-            <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={["admin"]}><AdminDashboard /></PrivateRoute>} />
+            <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+
             <Route path="/notfound" element={<Notfound />} />
             <Route path="*" element={<Notfound />} />
           </Routes>
@@ -68,4 +82,3 @@ export default function App() {
     </div>
   );
 }
-

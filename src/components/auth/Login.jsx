@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { supabase } from "../../lib/supabase"
@@ -14,10 +13,48 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setMsg("")
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setMsg(error.message)
-    else navigate("/VendorDashboard")
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      if (error) throw error
+
+      const userId = data.user.id
+
+      // نجيب ملفو من profiles - ده هو مصدر الحقيقة
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, vendor_status, store_name, store_slug")
+        .eq("id", userId)
+        .maybeSingle()
+
+      // 1. لو أدمن -> وديهو لوحة الأدمن
+      if (profile?.role === "admin") {
+        navigate("/admin")
+        return
+      }
+
+      // 2. لو تاجر لكن لسه ما عمل متجر -> وديهو CreateStore
+      if (!profile?.store_name) {
+        navigate("/vendor/Create-Store")
+        return
+      }
+
+      // 3. لو تاجر وعندو متجر لكن لسه ما اتوافق عليهو (pending) -> وديهو Billing
+      // عشان يدفع أو يشوف حالة الدفع
+      if (profile?.vendor_status === "pending") {
+        navigate("vendor/billing")
+        return
+      }
+
+      // 4. لو محظور -> وديهو الداشبورد، والداشبورد هو البيوريهو رسالة الحظر
+      // ما بنمنعو من الدخول هنا، عشان يعرف ليه محظور
+
+      // 5. لو كل شي تمام -> الداشبورد
+      navigate("/vendor/dashboard")
+    } catch (err) {
+      setMsg(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -47,5 +84,3 @@ export default function Login() {
     </div>
   )
 }
-
-

@@ -10,5 +10,5 @@ export default function Renew() {
 
   // /renew?plan=vip  ->  /billing?plan=vip
   // /renew  ->  /billing
-  return <Navigate to={`/billing${plan ? `?plan=${plan}` : ""}`} replace />;
+  return <Navigate to={`/vendor/billing${plan ? `?plan=${plan}` : ""}`} replace />;
 }
