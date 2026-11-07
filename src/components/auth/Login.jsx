@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { supabase } from "../../lib/supabase"
 
 export default function Login() {
@@ -8,6 +8,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState("")
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const next = searchParams.get("next")
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -27,6 +29,7 @@ export default function Login() {
         .maybeSingle()
 
       // 1. لو أدمن -> وديهو لوحة الأدمن
+      // الأدمن ما بنوديهو لـ next، لأنه next حق التجار
       if (profile?.role === "admin") {
         navigate("/admin")
         return
@@ -34,21 +37,28 @@ export default function Login() {
 
       // 2. لو تاجر لكن لسه ما عمل متجر -> وديهو CreateStore
       if (!profile?.store_name) {
-        navigate("/vendor/Create-Store")
+        navigate("/vendor/create-store")
         return
       }
 
       // 3. لو تاجر وعندو متجر لكن لسه ما اتوافق عليهو (pending) -> وديهو Billing
       // عشان يدفع أو يشوف حالة الدفع
       if (profile?.vendor_status === "pending") {
-        navigate("vendor/billing")
+        navigate("/vendor/billing")
         return
       }
 
       // 4. لو محظور -> وديهو الداشبورد، والداشبورد هو البيوريهو رسالة الحظر
       // ما بنمنعو من الدخول هنا، عشان يعرف ليه محظور
 
-      // 5. لو كل شي تمام -> الداشبورد
+      // 5. لو كان جاي من PrivateRoute وعندو next، وديهو ليها
+      // بس نتأكد إنها مسار آمن وجوّا /vendor أو /admin
+      if (next && (next.startsWith("/vendor/") || next.startsWith("/admin"))) {
+        navigate(next)
+        return
+      }
+
+      // 6. لو كل شي تمام -> الداشبورد
       navigate("/vendor/dashboard")
     } catch (err) {
       setMsg(err.message)

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
@@ -24,7 +25,6 @@ export default function VendorDashboard() {
         return;
       }
 
-      // 1. المصدر الواحد: profiles بس - بنفس حقولك
       const { data: profileData } = await supabase
         .from("profiles")
         .select("id, full_name, email, phone, city, store_name, store_slug, store_description, store_logo_url, store_banner_url, role, vendor_status, is_vendor_approved")
@@ -32,19 +32,17 @@ export default function VendorDashboard() {
         .single();
 
       if (!profileData) {
-        navigate("/create-store", { replace: true });
+        navigate("/vendor/create-store", { replace: true });
         return;
       }
 
-      // 2. لو لسه ما عمل متجر، وديهو يعمل متجر
       if (!profileData.store_name || !profileData.store_slug) {
-        navigate("/create-store", { replace: true });
+        navigate("/vendor/create-store", { replace: true });
         return;
       }
 
       setProfile(profileData);
 
-      // 3. المنتجات بـ owner_id - ما tenant_id
       const { data: items } = await supabase
         .from("products")
         .select("*")
@@ -67,14 +65,14 @@ export default function VendorDashboard() {
     setSearchParams({ tab }, { replace: true });
   };
 
-  // الاشتراك بنربطو بـ profile.id - ما tenant.id
   const subscription = useSubscription(profile?.id);
 
   if (loading) return <div className="p-10 text-center">جاري التحميل...</div>;
   if (!profile) return null;
 
-  // --- 1. حالة انتظار الموافقة - دي كانت ناقصة عندك ---
-  if (profile.vendor_status === "pending" || profile.is_vendor_approved === false) {
+  // --- 1. حالة انتظار الموافقة - بنعتمد على vendor_status بس ---
+  // لو الأدمن وافق (approved)، حتى لو is_vendor_approved = false، بنخليه يدخل
+  if (profile.vendor_status === "pending") {
     return (
       <div dir="rtl" className="mx-auto mt-12 max-w-xl rounded-2xl border bg-white p-8 text-center">
         <div className="text-4xl mb-3">⏳</div>
@@ -83,23 +81,24 @@ export default function VendorDashboard() {
           متجر <b>{profile.store_name}</b> ({profile.store_slug}.ahhio.com) تم انشاؤه بنجاح.
           <br /> فريقنا حيراجعو وحنوافق عليهو خلال 24 ساعة.
         </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">حالة الدفع / الفواتير</Link>
+          <a href="https://wa.me/249910070934" target="_blank" rel="noreferrer" className="rounded-lg border px-6 py-3 font-bold">واتساب الإدارة</a>
+        </div>
         <div className="mt-6 bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-right">
           <p className="text-sm font-bold mb-2">في الوقت ده، جهز متجرك:</p>
           <OnboardingCheckList />
         </div>
-        <a href="https://wa.me/249910070934" target="_blank" rel="noreferrer" className="mt-6 inline-block rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">
-          واتساب الإدارة
-        </a>
       </div>
     );
   }
 
-  if (subscription.isBlocked) {
+  if (profile.vendor_status === "blocked" || subscription.isBlocked) {
     return (
       <div dir="rtl" className="mx-auto mt-12 max-w-xl rounded-lg border bg-white p-8 text-center">
         <h1 className="text-3xl font-black">المتجر محظور</h1>
-        <p className="mt-3">تم منع المتجر بسبب انتهاء الاشتراك، يرجى التواصل مع الإدارة.</p>
-        <OnboardingCheckList />
+        <p className="mt-3">تم منع المتجر، يرجى التواصل مع الإدارة لمعرفة السبب.</p>
+        <a href="https://wa.me/249910070934" target="_blank" rel="noreferrer" className="mt-6 inline-block rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">واتساب الإدارة</a>
       </div>
     );
   }
@@ -108,8 +107,12 @@ export default function VendorDashboard() {
     return (
       <div dir="rtl" className="mx-auto mt-12 max-w-xl rounded-lg border bg-white p-8 text-center">
         <h1 className="text-3xl font-black">انتهت فترتك</h1>
-        <p className="mt-3">ادفع خلال 3 أيام لاستمرار المتجر.</p>
-        <a href="https://wa.me/249910070934" target="_blank" rel="noreferrer" className="mt-6 inline-block rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">واتساب الإدارة</a>
+        <p className="mt-3">اشتراكك انتهى. جدد الآن عشان متجرك يرجع يشتغل.</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">جدد اشتراكك</Link>
+          <Link to="/vendor/renew" className="rounded-lg border px-6 py-3 font-bold">صفحة التجديد</Link>
+        </div>
+        <a href="https://wa.me/249910070934" target="_blank" rel="noreferrer" className="mt-6 inline-block text-sm text-gray-500 underline">واتساب الإدارة</a>
       </div>
     );
   }
@@ -117,6 +120,14 @@ export default function VendorDashboard() {
   return (
     <div dir="rtl" className="min-h-screen bg-white text-black">
       <div className="mx-auto max-w-6xl px-4 py-6">
+        {/* تنبيه قرب الانتهاء */}
+        {subscription.daysLeft !== null && subscription.daysLeft <= 3 && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+            <p className="text-sm font-bold">⚠️ باقي {subscription.daysLeft} يوم على انتهاء اشتراكك</p>
+            <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white">جدد الآن</Link>
+          </div>
+        )}
+
         {/* الهيدر */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-white p-5">
           <div className="flex items-center gap-3">
@@ -140,7 +151,6 @@ export default function VendorDashboard() {
           </div>
         </div>
 
-        {/* Onboarding - بيظهر بس لو لسه ما كمل */}
         <div className="mb-6">
           <OnboardingCheckList />
         </div>
@@ -199,6 +209,7 @@ export default function VendorDashboard() {
                     <h3 className="font-bold">{product.name}</h3>
                     <p className="mt-2 text-lg font-black">{Number(product.price || 0).toLocaleString()} SDG</p>
                     <p className="mt-2 text-sm">المخزون: {product.stock || 0}</p>
+                    <Link to={`/vendor/edit-product/${product.id}`} className="mt-3 inline-block rounded-lg border px-3 py-1 text-sm font-bold">تعديل</Link>
                   </div>
                 </article>
               ))}
