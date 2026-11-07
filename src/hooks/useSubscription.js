@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { PACKAGES } from "../lib/Package";
 
 const DAY = 24 * 60 * 60 * 1000;
 
+// Hook نهائي - مصدر الباقات هو PACKAGES فقط
+// Plans.jsx + useSubscription + Admin كلهم بيقروا من نفس الملف
 export default function useSubscription(tenantId) {
   const [state, setState] = useState({
     plan: null,
     subscription: null,
     daysLeft: 0,
+    graceDaysLeft: 0,
     isExpired: false,
     isBlocked: false,
-    canAddProduct: true,
+    isExpiringSoon: false,
+    isPending: false,
+    canAddProduct: false,
     loading: true,
   });
 
@@ -19,123 +25,132 @@ export default function useSubscription(tenantId) {
 
     async function load() {
       if (!tenantId) {
-        setState({
-          plan: null,
-          subscription: null,
-          daysLeft: 0,
-          isExpired: false,
-          isBlocked: false,
-          canAddProduct: false,
-          loading: false,
-        });
+        setState((s) => ({ ...s, loading: false, canAddProduct: false }));
         return;
       }
 
       try {
-        const { data: subscriptionData } = await supabase
+        // 1. التاجر من profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, store_name, store_slug, vendor_status, is_vendor_approved, role")
+          .eq("id", tenantId)
+          .maybeSingle();
+
+        const isPendingVendor = profile?.vendor_status === "pending";
+        const isBlockedVendor = profile?.vendor_status === "blocked";
+
+        // 2. آخر اشتراك - tenant_id أول، بعدين owner_id للتوافق
+        let subscription = null;
+        const { data: subByTenant } = await supabase
           .from("subscriptions")
           .select("*")
           .eq("tenant_id", tenantId)
           .order("end_date", { ascending: false })
           .limit(1)
           .maybeSingle();
+        subscription = subByTenant || null;
 
-        let subscription = subscriptionData || null;
-        let plan = null;
-
-        if (subscription?.plan_id) {
-          const { data: planData } = await supabase
-            .from("plans")
+        if (!subscription) {
+          const { data: subByOwner } = await supabase
+            .from("subscriptions")
             .select("*")
-            .eq("id", subscription.plan_id)
+            .eq("owner_id", tenantId)
+            .order("end_date", { ascending: false })
+            .limit(1)
             .maybeSingle();
-          plan = planData || null;
+          subscription = subByOwner || null;
         }
 
+        // 3. الخطة - من PACKAGES فقط، ده الربط الصح مع Plans.jsx
+        // subscription.plan_id لازم يكون free / pro / vip
+        let plan = null;
+        if (subscription?.plan_id) {
+          plan = PACKAGES[subscription.plan_id] || null;
+        }
+        // لو ما في اشتراك، اعتبرها free تجريبية - ما تجيب monthly
         if (!plan) {
-          const { data: tenantData } = await supabase
-            .from("tenants")
-            .select("plan")
-            .eq("id", tenantId)
-            .maybeSingle();
-          if (tenantData?.plan) {
-            const { data: fallbackPlan } = await supabase
-              .from("plans")
-              .select("*")
-              .eq("id", tenantData.plan)
-              .maybeSingle();
-            plan = fallbackPlan || null;
-          }
+          plan = PACKAGES.free;
         }
 
         const now = new Date();
         let isExpired = false;
-        let isBlocked = false;
+        let isBlocked = isBlockedVendor;
+        let updatedSubscription = subscription;
 
-        if (subscription && subscription.end_date) {
+        // 4. انتهاء + Grace 3 أيام + حظر
+        if (subscription?.end_date) {
           const endDate = new Date(subscription.end_date);
+
           if (now > endDate && ["trial", "active"].includes(subscription.status)) {
             const grace = new Date(now.getTime() + 3 * DAY).toISOString();
-            await supabase
-              .from("subscriptions")
-              .update({ status: "expired", grace_until: grace })
-              .eq("id", subscription.id);
-            await supabase.from("tenants").update({ status: "expired" }).eq("id", tenantId);
-            subscription = { ...subscription, status: "expired", grace_until: grace };
+            await supabase.from("subscriptions").update({ status: "expired", grace_until: grace }).eq("id", subscription.id);
+            await supabase.from("profiles").update({ vendor_status: "expired" }).eq("id", tenantId);
+            updatedSubscription = { ...subscription, status: "expired", grace_until: grace };
             isExpired = true;
           }
 
-          if (subscription.status === "expired") {
-            const graceUntil = subscription.grace_until ? new Date(subscription.grace_until) : null;
+          if (updatedSubscription?.status === "expired") {
+            isExpired = true;
+            const graceUntil = updatedSubscription.grace_until ? new Date(updatedSubscription.grace_until) : null;
             if (graceUntil && now > graceUntil) {
-              await supabase.from("tenants").update({ status: "blocked" }).eq("id", tenantId);
+              await supabase.from("profiles").update({ vendor_status: "blocked" }).eq("id", tenantId);
               isBlocked = true;
             }
           }
+        } else if (!subscription) {
+          // ما عندو اشتراك أصلا
+          isExpired = true;
         }
 
+        // 5. حد المنتجات - من PACKAGES
         const { count } = await supabase
           .from("products")
           .select("id", { count: "exact", head: true })
           .eq("tenant_id", tenantId);
 
-        const maxProducts = plan?.max_products ?? 9999;
-        const canAddProduct = Number(count || 0) < Number(maxProducts || 9999);
+        const maxProducts = plan?.max_products ?? 10;
+        const canAddProduct =
+          !isPendingVendor &&
+          !isBlocked &&
+          !isExpired &&
+          Number(count || 0) < Number(maxProducts);
 
-        const daysLeft = subscription?.end_date
-          ? Math.ceil((new Date(subscription.end_date).getTime() - now.getTime()) / DAY)
+        const daysLeft = updatedSubscription?.end_date
+          ? Math.ceil((new Date(updatedSubscription.end_date).getTime() - now.getTime()) / DAY)
+          : 0;
+
+        const graceDaysLeft = updatedSubscription?.grace_until
+          ? Math.max(0, Math.ceil((new Date(updatedSubscription.grace_until).getTime() - now.getTime()) / DAY))
           : 0;
 
         if (!active) return;
 
         setState({
           plan,
-          subscription,
+          subscription: updatedSubscription,
           daysLeft: daysLeft > 0 ? daysLeft : 0,
-          isExpired: isExpired || subscription?.status === "expired",
-          isBlocked: isBlocked || subscription?.status === "blocked" || false,
+          graceDaysLeft,
+          isExpired,
+          isBlocked,
+          isExpiringSoon: !isExpired && daysLeft > 0 && daysLeft <= 5,
+          isPending: isPendingVendor,
           canAddProduct,
           loading: false,
+          vendor: profile,
+          productCount: Number(count || 0),
+          maxProducts,
         });
       } catch (error) {
+        console.error("useSubscription error:", error);
         if (active) {
-          setState({
-            plan: null,
-            subscription: null,
-            daysLeft: 0,
-            isExpired: false,
-            isBlocked: false,
-            canAddProduct: false,
-            loading: false,
-          });
+          setState((s) => ({ ...s, loading: false, canAddProduct: false }));
         }
       }
     }
 
     load();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [tenantId]);
 
   return state;
