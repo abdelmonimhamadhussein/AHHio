@@ -1,11 +1,11 @@
 import { useState } from "react";
-import {useRouter} from "next/navigate";
+import {useNavigate} from "react-router-dom";
 import {supabase} from "../../lib/supabase";
 
 export default function CreateStore(){
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const handleNameChange = (val) => {
   setName(val)
@@ -13,7 +13,7 @@ export default function CreateStore(){
   }
   const handleCreate = async () => {
     await supabase.from('store').insert({name, slug})
-    router.push("/vendorDashboard")
+    navigate("/vendorDashboard")
   }
 
   return (
