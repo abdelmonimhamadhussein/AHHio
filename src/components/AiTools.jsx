@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '.../lib/suabase'
+import { supabase } from '.../lib/supabase'
 import { brain } from '../service/brain'
 
 export default function AiTools() {
