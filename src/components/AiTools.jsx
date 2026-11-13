@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { brain } from '../brain.js'
+import { supabase } from '.../lib/suabase'
+import { brain } from '../service/brain'
 
 export default function AiTools() {
   const [open, setOpen] = useState(false)
