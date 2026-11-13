@@ -21,17 +21,18 @@ export const brain = {
   understand(q) {
     const text = q.toLowerCase()
     if (text.includes('سلام') || text.includes('اهلا') || text.includes('كيفك') || text.includes('هلا')) return 'greeting'
-    if (text.includes('سعر') || text.includes('كم') || text.includes('بكم')) return 'price'
     if (text.includes('توصيل') || text.includes('رايدر') || text.includes('يوصل')) return 'delivery'
     if (text.includes('متجر') || text.includes('اسمي') || text.includes('بتتذكر') || text.includes('ذاكر')) return 'memory'
+    if (text.includes('سعر') || text.includes('كم') || text.includes('بكم')) return 'price'
     return 'product'
   },
-  reply(type) {
+  reply(type, q) {
     if (type === 'greeting') return `هلا والله 👋 أنا منعم، مساعدك في Ahhio.\nكيفك انت؟ داير تفتش عن شنو الليلة؟`
     if (type === 'delivery') return `التوصيل عندنا شغال يا استاذ 🛵\nاكتب لي اسم المنتج وأنا أجهزو ليك.`
-    if (type === 'price') return `تمام، وريني اسم المنتج بالظبط وانا اجيب ليك سعرو طوالي 💰\nعندنا اسعار حلوة شديد الليلة.`
-    if (type === 'memory') return `أيوه متذكرك يا معلم 🧠\nقلت لي اسم متجرك شنو؟ عشان احفظو ليك.`
-    if (type === 'product') return `تمام، داير ياتو منتج؟\nاكتب لي اسمو وانا افتش ليك عنو في المتاجر.`
-    return `تمام فهمتك، وريني تفاصيل أكتر عشان اساعدك.`
+    // مهم: ديل بيرجعو null عشان AiTools يمشي يفتش في جدول products
+    if (type === 'price') return null
+    if (type === 'memory') return null
+    if (type === 'product') return null
+    return null
   }
 }
