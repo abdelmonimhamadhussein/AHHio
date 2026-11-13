@@ -30,16 +30,23 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      // بنقرا من profiles بس - ما tenants ولا store
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (data) setForm((prev) => ({ ...prev, ...data }));
-      setLoading(false);
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) throw new Error("يجب تسجيل الدخول لعرض الإعدادات");
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (error) throw error;
+        if (data) setForm((prev) => ({ ...prev, ...data }));
+      } catch (error) {
+        setMsg(error.message || "تعذر تحميل الإعدادات");
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -74,34 +81,63 @@ export default function SettingsPage() {
   async function save() {
     setSaving(true);
     setMsg("");
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("يجب تسجيل الدخول لحفظ الإعدادات");
 
-    // بنحفظ في profiles بس، بنفس أسماء الحقول
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: form.full_name,
-        username: form.username,
-        phone: form.phone,
-        avatar_url: form.avatar_url,
-        city: form.city,
-        store_name: form.store_name,
-        store_description: form.store_description,
-        store_address: form.store_address,
-        store_logo_url: form.store_logo_url,
-        store_banner_url: form.store_banner_url,
-        // لو الحقول دي ما موجودة في profiles عندك، اعمل ليها عمود
-        whatsapp_number: form.whatsapp_number,
-        bank_account: form.bank_account,
-        instagram: form.instagram,
-        delivery_fee: Number(form.delivery_fee) || 0,
-        theme_color: form.theme_color,
-      })
-      .eq("id", user.id);
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: form.full_name,
+          username: form.username,
+          phone: form.phone,
+          avatar_url: form.avatar_url,
+          city: form.city,
+          store_name: form.store_name,
+          store_slug: form.store_slug,
+          store_description: form.store_description,
+          store_address: form.store_address,
+          store_logo_url: form.store_logo_url,
+          store_banner_url: form.store_banner_url,
+          whatsapp_number: form.whatsapp_number,
+          bank_account: form.bank_account,
+          instagram: form.instagram,
+          delivery_fee: Number(form.delivery_fee) || 0,
+          theme_color: form.theme_color,
+        })
+        .eq("id", user.id);
+      if (profileError) throw profileError;
 
-    setSaving(false);
-    if (!error) setMsg("تم الحفظ بنجاح ✅");
-    else setMsg(error.message);
+      const { data: tenant, error: tenantError } = await supabase
+        .from("tenants")
+        .update({
+          owner_name: form.full_name,
+          store_name: form.store_name,
+          slug: form.store_slug,
+          description: form.store_description,
+          city: form.city,
+          phone: form.phone,
+          whatsapp_number: form.whatsapp_number,
+          logo_url: form.store_logo_url,
+          banner_url: form.store_banner_url,
+          instagram: form.instagram,
+          delivery_fee: Number(form.delivery_fee) || 0,
+          theme_color: form.theme_color,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("owner_id", user.id)
+        .select("id")
+        .maybeSingle();
+      if (tenantError) throw tenantError;
+      if (!tenant) throw new Error("لم يتم العثور على متجر لحفظ إعداداته");
+
+      setMsg("تم الحفظ بنجاح ✅");
+    } catch (error) {
+      setMsg(error.message || "تعذر حفظ الإعدادات");
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <p className="p-5">جاري التحميل...</p>;
@@ -118,7 +154,7 @@ export default function SettingsPage() {
       </div>
 
       {msg && (
-        <p className="bg-green-50 text-green-700 text-sm p-3 rounded-xl border border-green-200">{msg}</p>
+        <p role="status" className="bg-green-50 text-green-700 text-sm p-3 rounded-xl border border-green-200">{msg}</p>
       )}
 
       {/* 1. بيانات صاحب المتجر */}
@@ -187,4 +223,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

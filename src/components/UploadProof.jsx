@@ -77,7 +77,6 @@ export const uploadProof = async (file, planId = "pro") => {
     amount,
     approved: false,
     plan,
-    publicUrl: publicData.publicUrl,
   };
 };
 

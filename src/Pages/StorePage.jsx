@@ -24,7 +24,7 @@ export default function StorePage() {
 
       const { data: tenantData } = await supabase
         .from("tenants")
-        .select("*")
+        .select("id, store_name, slug, description, city, whatsapp_number, logo_url, banner_url, rating, is_verified, status, delivery_fee")
         .eq("slug", slug)
         .maybeSingle();
 
@@ -136,7 +136,7 @@ export default function StorePage() {
         )}
       </div>
       <div className="mx-auto mt-12 max-w-6xl px-4">
-        <AiTools storeId={tenant?.id} tenantName={tenant?.name} />
+        <AiTools storeId={tenant?.id} tenantName={tenant?.store_name} />
       </div>
     </div>
   );

@@ -30,7 +30,7 @@ export default function ProductDetails() {
 
       const { data: storeData } = await supabase
         .from("tenants")
-        .select("*")
+        .select("id, owner_id, store_name, slug, city, delivery_fee, whatsapp_number, logo_url, status")
         .eq("id", productData.tenant_id || productData.vendor_id)
         .maybeSingle();
 

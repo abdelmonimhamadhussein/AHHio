@@ -6,7 +6,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 // Hook نهائي - مصدر الباقات هو PACKAGES فقط
 // Plans.jsx + useSubscription + Admin كلهم بيقروا من نفس الملف
-export default function useSubscription(tenantId) {
+export default function useSubscription(ownerId) {
   const [state, setState] = useState({
     plan: null,
     subscription: null,
@@ -24,79 +24,88 @@ export default function useSubscription(tenantId) {
     let active = true;
 
     async function load() {
-      if (!tenantId) {
+      if (!ownerId) {
         setState((s) => ({ ...s, loading: false, canAddProduct: false }));
         return;
       }
 
       try {
-        // 1. التاجر من profiles
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id, store_name, store_slug, vendor_status, is_vendor_approved, role")
-          .eq("id", tenantId)
+          .select("id, store_name, store_slug, vendor_status, is_vendor_approved, role, requested_plan_id")
+          .eq("id", ownerId)
           .maybeSingle();
 
-        const isPendingVendor = profile?.vendor_status === "pending";
-        const isBlockedVendor = profile?.vendor_status === "blocked";
+        const { data: tenant, error: tenantError } = await supabase
+          .from("tenants")
+          .select("id, plan")
+          .eq("owner_id", ownerId)
+          .maybeSingle();
+        if (tenantError) throw tenantError;
 
-        // 2. آخر اشتراك - tenant_id أول، بعدين owner_id للتوافق
-        let subscription = null;
-        const { data: subByTenant } = await supabase
+        if (!tenant) {
+          if (!active) return;
+          setState((s) => ({
+            ...s,
+            plan: PACKAGES[profile?.requested_plan_id] || PACKAGES.free,
+            isPending: profile?.vendor_status === "pending",
+            isBlocked: ["blocked", "rejected"].includes(profile?.vendor_status),
+            canAddProduct: false,
+            loading: false,
+            vendor: profile,
+          }));
+          return;
+        }
+
+        const tenantId = tenant.id;
+        const { data: vendorStatus, error: statusError } = await supabase.rpc(
+          "refresh_vendor_subscription_status",
+          { target_tenant: tenantId }
+        );
+        if (statusError) throw statusError;
+
+        const { data: refreshedProfile, error: refreshedProfileError } = await supabase
+          .from("profiles")
+          .select("id, store_name, store_slug, vendor_status, is_vendor_approved, role, requested_plan_id")
+          .eq("id", ownerId)
+          .maybeSingle();
+        if (refreshedProfileError) throw refreshedProfileError;
+        const currentProfile = refreshedProfile || profile;
+        const isPendingVendor = currentProfile?.vendor_status === "pending";
+        const isBlockedVendor = ["blocked", "rejected"].includes(currentProfile?.vendor_status);
+
+        const { data: subscription } = await supabase
           .from("subscriptions")
           .select("*")
           .eq("tenant_id", tenantId)
           .order("end_date", { ascending: false })
           .limit(1)
           .maybeSingle();
-        subscription = subByTenant || null;
 
-        if (!subscription) {
-          const { data: subByOwner } = await supabase
-            .from("subscriptions")
-            .select("*")
-            .eq("owner_id", tenantId)
-            .order("end_date", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          subscription = subByOwner || null;
-        }
-
-        // 3. الخطة - من PACKAGES فقط، ده الربط الصح مع Plans.jsx
-        // subscription.plan_id لازم يكون free / pro / vip
         let plan = null;
         if (subscription?.plan_id) {
           plan = PACKAGES[subscription.plan_id] || null;
         }
-        // لو ما في اشتراك، اعتبرها free تجريبية - ما تجيب monthly
         if (!plan) {
-          plan = PACKAGES.free;
+          plan = PACKAGES[tenant.plan] || PACKAGES.free;
         }
 
         const now = new Date();
         let isExpired = false;
-        let isBlocked = isBlockedVendor;
+        let isBlocked = isBlockedVendor || vendorStatus === "blocked";
         let updatedSubscription = subscription;
 
-        // 4. انتهاء + Grace 3 أيام + حظر
         if (subscription?.end_date) {
           const endDate = new Date(subscription.end_date);
 
           if (now > endDate && ["trial", "active"].includes(subscription.status)) {
-            const grace = new Date(now.getTime() + 3 * DAY).toISOString();
-            await supabase.from("subscriptions").update({ status: "expired", grace_until: grace }).eq("id", subscription.id);
-            await supabase.from("profiles").update({ vendor_status: "expired" }).eq("id", tenantId);
-            updatedSubscription = { ...subscription, status: "expired", grace_until: grace };
             isExpired = true;
           }
 
           if (updatedSubscription?.status === "expired") {
             isExpired = true;
             const graceUntil = updatedSubscription.grace_until ? new Date(updatedSubscription.grace_until) : null;
-            if (graceUntil && now > graceUntil) {
-              await supabase.from("profiles").update({ vendor_status: "blocked" }).eq("id", tenantId);
-              isBlocked = true;
-            }
+            if (graceUntil && now > graceUntil) isBlocked = true;
           }
         } else if (!subscription) {
           // ما عندو اشتراك أصلا
@@ -137,7 +146,7 @@ export default function useSubscription(tenantId) {
           isPending: isPendingVendor,
           canAddProduct,
           loading: false,
-          vendor: profile,
+          vendor: currentProfile,
           productCount: Number(count || 0),
           maxProducts,
         });
@@ -151,7 +160,7 @@ export default function useSubscription(tenantId) {
 
     load();
     return () => { active = false; };
-  }, [tenantId]);
+  }, [ownerId]);
 
   return state;
 }

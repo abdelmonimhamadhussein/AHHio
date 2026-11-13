@@ -13,7 +13,11 @@ export function AuthProvider({ children }) {
     setUser(userData);
 
     if (userData?.role === 'vendor') {
-      const { data: sellerData } = await supabase.from('tenants').select('*').eq('owner_id', authUser.id).maybeSingle();
+      const { data: sellerData } = await supabase
+        .from('tenants')
+        .select('id, owner_id, store_name, slug, description, city, delivery_fee, phone, whatsapp_number, instagram, logo_url, banner_url, theme_color, status, plan, rating, is_verified')
+        .eq('owner_id', authUser.id)
+        .maybeSingle();
       setSeller(sellerData);
     } else {
       setSeller(null);
@@ -104,4 +108,3 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
-

@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import useSubscription from "../../hooks/useSubscription";
-import OnboardingCheckList from "../../components/vendor/OnboardingChecklist";
-import StoreBranding from "../../components/vendor/StoreBranding";
+import OnboardingCheckList from "../../components/Vendor/OnboardingChecklist";
+import StoreSettings from "../../components/Vendor/vendorSettings";
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
@@ -103,13 +103,17 @@ export default function VendorDashboard() {
     );
   }
 
-  if (subscription.isExpired) {
+  const isSubscriptionExpired =
+    subscription.isExpired ||
+    (!subscription.loading && subscription.subscription?.end_date && subscription.daysLeft <= 0);
+
+  if (isSubscriptionExpired) {
     return (
       <div dir="rtl" className="mx-auto mt-12 max-w-xl rounded-lg border bg-white p-8 text-center">
-        <h1 className="text-3xl font-black">انتهت فترتك</h1>
+        <h1 className="text-3xl font-black">انتهت الباقة</h1>
         <p className="mt-3">اشتراكك انتهى. جدد الآن عشان متجرك يرجع يشتغل.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">جدد اشتراكك</Link>
+          <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-6 py-3 font-bold text-white">تجديد</Link>
           <Link to="/vendor/renew" className="rounded-lg border px-6 py-3 font-bold">صفحة التجديد</Link>
         </div>
         <a href="https://wa.me/249910070934" target="_blank" rel="noreferrer" className="mt-6 inline-block text-sm text-gray-500 underline">واتساب الإدارة</a>
@@ -121,10 +125,10 @@ export default function VendorDashboard() {
     <div dir="rtl" className="min-h-screen bg-white text-black">
       <div className="mx-auto max-w-6xl px-4 py-6">
         {/* تنبيه قرب الانتهاء */}
-        {subscription.daysLeft !== null && subscription.daysLeft <= 3 && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
-            <p className="text-sm font-bold">⚠️ باقي {subscription.daysLeft} يوم على انتهاء اشتراكك</p>
-            <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white">جدد الآن</Link>
+        {subscription.daysLeft > 0 && subscription.daysLeft <= 3 && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700">
+            <p className="text-sm font-bold">⚠️ تبقى لك {subscription.daysLeft} {subscription.daysLeft === 1 ? "يوم" : "أيام"} على انتهاء الباقة - جدد الآن</p>
+            <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white">تجديد</Link>
           </div>
         )}
 
@@ -175,7 +179,7 @@ export default function VendorDashboard() {
         </div>
 
         {activeTab === "branding" ? (
-          <StoreBranding profile={profile} />
+          <StoreSettings />
         ) : activeTab === "settings" ? (
           <div className="rounded-lg border bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -184,10 +188,12 @@ export default function VendorDashboard() {
                 <div className="text-xl font-black">{subscription.plan?.name || "مجانية"}</div>
                 <div className="mt-2 text-sm">الحد الأقصى للمنتجات: {subscription.plan?.max_products || 5}</div>
               </div>
-              <div className="text-left">
-                <div className="text-sm">متبقي</div>
-                <div className="text-xl font-black">{subscription.daysLeft || 0} يوم</div>
-              </div>
+              {subscription.daysLeft > 0 && subscription.daysLeft <= 3 && (
+                <div className="text-left">
+                  <div className="text-sm">متبقي</div>
+                  <div className="text-xl font-black">{subscription.daysLeft} يوم</div>
+                </div>
+              )}
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link to="/vendor/billing" className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white">الفواتير والاشتراك</Link>

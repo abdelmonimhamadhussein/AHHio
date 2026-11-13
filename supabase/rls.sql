@@ -34,6 +34,27 @@ on conflict (id) do update set
   max_images = excluded.max_images,
   commission_percent = excluded.commission_percent;
 
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists username text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists city text;
+alter table public.profiles add column if not exists store_name text;
+alter table public.profiles add column if not exists store_slug text;
+alter table public.profiles add column if not exists store_description text;
+alter table public.profiles add column if not exists store_address text;
+alter table public.profiles add column if not exists store_logo_url text;
+alter table public.profiles add column if not exists store_banner_url text;
+alter table public.profiles add column if not exists whatsapp text;
+alter table public.profiles add column if not exists whatsapp_number text;
+alter table public.profiles add column if not exists bank_account text;
+alter table public.profiles add column if not exists instagram text;
+alter table public.profiles add column if not exists delivery_fee numeric not null default 0;
+alter table public.profiles add column if not exists theme_color text default '#E91E63';
+alter table public.profiles add column if not exists vendor_status text default 'pending';
+alter table public.profiles add column if not exists is_vendor_approved boolean not null default false;
+alter table public.profiles add column if not exists requested_plan_id text references public.plans(id);
+
 create table if not exists public.tenants (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null unique references auth.users(id) on delete cascade,
@@ -60,7 +81,8 @@ create table if not exists public.tenants (
 
 alter table public.tenants add column if not exists owner_id uuid references auth.users(id) on delete cascade;
 alter table public.tenants add column if not exists plan text references public.plans(id) default 'basic';
-alter table public.tenants add column if not exists status text default 'active';
+alter table public.tenants add column if not exists status text default 'pending';
+alter table public.tenants alter column status set default 'pending';
 alter table public.tenants add column if not exists whatsapp_number text;
 alter table public.tenants add column if not exists logo_url text;
 alter table public.tenants add column if not exists banner_url text;
@@ -228,55 +250,19 @@ $$;
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public
 as $$
-declare
-  selected_plan_id text;
-  selected_plan_price numeric;
-  created_tenant_id uuid;
 begin
-  insert into public.profiles (id, email, role)
-  values (new.id, new.email, case when new.raw_user_meta_data->>'role' = 'vendor' then 'vendor' else 'customer' end)
+  insert into public.profiles (id, email, role, whatsapp, requested_plan_id)
+  values (
+    new.id,
+    new.email,
+    case when new.raw_user_meta_data->>'role' = 'vendor' then 'vendor' else 'customer' end,
+    new.raw_user_meta_data->>'whatsapp',
+    case
+      when new.raw_user_meta_data->>'plan_id' = 'free' then 'basic'
+      else coalesce(nullif(trim(new.raw_user_meta_data->>'plan_id'), ''), 'basic')
+    end
+  )
   on conflict (id) do update set email = excluded.email;
-
-  if new.raw_user_meta_data->>'role' = 'vendor'
-     and nullif(new.raw_user_meta_data->>'slug', '') is not null then
-    selected_plan_id := coalesce(nullif(trim(new.raw_user_meta_data->>'plan_id'), ''), 'basic');
-    select price into selected_plan_price
-    from public.plans
-    where id = selected_plan_id and is_active = true;
-
-    if not found then
-      selected_plan_id := 'basic';
-      select price into selected_plan_price
-      from public.plans
-      where id = selected_plan_id and is_active = true;
-    end if;
-
-    insert into public.tenants (owner_id, owner_name, store_name, slug, whatsapp_number, plan)
-    values (
-      new.id,
-      coalesce(new.raw_user_meta_data->>'store_name', 'متجر جديد'),
-      coalesce(new.raw_user_meta_data->>'store_name', 'متجر جديد'),
-      lower(new.raw_user_meta_data->>'slug'),
-      new.raw_user_meta_data->>'whatsapp',
-      selected_plan_id
-    )
-    on conflict (owner_id) do nothing;
-
-    select id into created_tenant_id
-    from public.tenants
-    where owner_id = new.id;
-
-    insert into public.subscriptions (tenant_id, plan_id, status, start_date, end_date, amount)
-    values (
-      created_tenant_id,
-      selected_plan_id,
-      case when selected_plan_price > 0 then 'trial' else 'active' end,
-      now(),
-      case when selected_plan_price > 0 then now() + interval '3 days' else now() + interval '30 days' end,
-      coalesce(selected_plan_price, 0)
-    )
-    on conflict (tenant_id) do nothing;
-  end if;
   return new;
 end;
 $$;
@@ -309,6 +295,12 @@ drop policy if exists profiles_update_self on public.profiles;
 create policy profiles_update_self on public.profiles for update to authenticated
 using (id = auth.uid() or public.is_admin())
 with check ((id = auth.uid() and role in ('customer', 'vendor')) or public.is_admin());
+revoke update on public.profiles from anon, authenticated;
+grant update (
+  full_name, username, avatar_url, phone, city, store_name, store_slug,
+  store_description, store_address, store_logo_url, store_banner_url, whatsapp,
+  whatsapp_number, bank_account, instagram, delivery_fee, theme_color
+) on public.profiles to authenticated;
 
 drop policy if exists tenants_public_read on public.tenants;
 create policy tenants_public_read on public.tenants for select to anon, authenticated
@@ -320,7 +312,7 @@ with check (
   or (
     owner_id = auth.uid()
     and plan = coalesce(nullif(auth.jwt()->'user_metadata'->>'plan_id', ''), 'basic')
-    and status = 'active'
+    and status = 'pending'
     and is_verified = false
   )
 );
@@ -333,13 +325,37 @@ using (owner_id = auth.uid() or public.is_admin());
 
 drop policy if exists products_public_read on public.products;
 create policy products_public_read on public.products for select to anon, authenticated
-using ((status = 'active' and is_active = true) or public.owns_tenant(tenant_id) or public.is_admin());
+using (
+  (
+    status = 'active'
+    and is_active = true
+    and exists (
+      select 1 from public.tenants
+      where id = products.tenant_id and status = 'active'
+    )
+  )
+  or public.owns_tenant(tenant_id)
+  or public.is_admin()
+);
 drop policy if exists products_tenant_insert on public.products;
 create policy products_tenant_insert on public.products for insert to authenticated
-with check (public.owns_tenant(tenant_id) or public.is_admin());
+with check (
+  exists (
+    select 1 from public.tenants
+    where id = products.tenant_id and owner_id = auth.uid() and status = 'active'
+  )
+  or public.is_admin()
+);
 drop policy if exists products_tenant_update on public.products;
 create policy products_tenant_update on public.products for update to authenticated
-using (public.owns_tenant(tenant_id) or public.is_admin()) with check (public.owns_tenant(tenant_id) or public.is_admin());
+using (public.owns_tenant(tenant_id) or public.is_admin())
+with check (
+  exists (
+    select 1 from public.tenants
+    where id = products.tenant_id and owner_id = auth.uid() and status = 'active'
+  )
+  or public.is_admin()
+);
 drop policy if exists products_tenant_delete on public.products;
 create policy products_tenant_delete on public.products for delete to authenticated
 using (public.owns_tenant(tenant_id) or public.is_admin());
@@ -406,9 +422,97 @@ revoke all on public.renew_requests from anon, authenticated;
 revoke update on public.tenants from anon, authenticated;
 grant update (
   owner_name, store_name, slug, description, city, phone, whatsapp_number,
-  bank_account, instagram, logo_url, banner_url, theme_color, delivery_fee, updated_at
+  instagram, logo_url, banner_url, theme_color, delivery_fee, updated_at
 ) on public.tenants to authenticated;
 grant insert on public.tenants to authenticated;
+revoke select on public.tenants from anon, authenticated;
+revoke select (bank_account) on public.tenants from anon, authenticated;
+grant select (
+  id, owner_id, owner_name, store_name, slug, description, city, delivery_fee,
+  phone, whatsapp_number, instagram, logo_url, banner_url, theme_color, status,
+  plan, rating, is_verified, created_at, updated_at
+) on public.tenants to anon, authenticated;
+
+create or replace function public.create_vendor_store(
+  p_store_name text,
+  p_store_slug text,
+  p_store_description text,
+  p_plan_id text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  current_profile public.profiles%rowtype;
+  selected_plan_id text;
+  created_tenant_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'Authentication required' using errcode = '42501';
+  end if;
+
+  if nullif(trim(p_store_name), '') is null
+     or nullif(trim(p_store_slug), '') is null
+     or length(trim(p_store_slug)) < 3
+     or lower(trim(p_store_slug)) !~ '^[a-z0-9-]+$' then
+    raise exception 'Invalid store name or slug';
+  end if;
+
+  select * into current_profile
+  from public.profiles
+  where id = current_user_id
+  for update;
+  if not found or current_profile.role <> 'vendor' then
+    raise exception 'Vendor profile not found' using errcode = '42501';
+  end if;
+
+  if exists (select 1 from public.tenants where owner_id = current_user_id) then
+    raise exception 'This account already has a store';
+  end if;
+
+  selected_plan_id := case when p_plan_id = 'free' then 'basic' else p_plan_id end;
+  if not exists (
+    select 1 from public.plans
+    where id = selected_plan_id and is_active = true
+  ) then
+    raise exception 'Selected plan is unavailable';
+  end if;
+
+  insert into public.tenants (
+    owner_id, owner_name, store_name, slug, description, whatsapp_number,
+    plan, status, is_verified
+  )
+  values (
+    current_user_id,
+    coalesce(nullif(trim(current_profile.full_name), ''), nullif(trim(current_profile.name), ''), trim(p_store_name)),
+    trim(p_store_name),
+    lower(trim(p_store_slug)),
+    nullif(trim(p_store_description), ''),
+    coalesce(current_profile.whatsapp_number, current_profile.whatsapp),
+    selected_plan_id,
+    'pending',
+    false
+  )
+  returning id into created_tenant_id;
+
+  update public.profiles
+  set store_name = trim(p_store_name),
+      store_slug = lower(trim(p_store_slug)),
+      store_description = nullif(trim(p_store_description), ''),
+      requested_plan_id = selected_plan_id,
+      vendor_status = 'pending',
+      is_vendor_approved = false
+  where id = current_user_id;
+
+  return created_tenant_id;
+end;
+$$;
+
+revoke all on function public.create_vendor_store(text, text, text, text) from public;
+grant execute on function public.create_vendor_store(text, text, text, text) to authenticated;
 
 create or replace function public.place_marketplace_order(
   customer_name text,
@@ -587,6 +691,55 @@ $$;
 revoke all on function public.assign_order_delivery_agent(uuid, uuid) from public;
 grant execute on function public.assign_order_delivery_agent(uuid, uuid) to authenticated;
 
+create or replace function public.auto_assign_order_delivery_agent(target_order uuid, target_agent uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  order_tenant uuid;
+  assigned_agent uuid;
+begin
+  if auth.role() is distinct from 'service_role' then
+    raise exception 'Not authorized' using errcode = '42501';
+  end if;
+
+  select tenant_id, delivery_agent_id
+  into order_tenant, assigned_agent
+  from public.orders
+  where id = target_order
+  for update;
+
+  if not found then
+    raise exception 'Order not found';
+  end if;
+
+  if assigned_agent is not null then
+    return assigned_agent;
+  end if;
+
+  if target_agent is null or not exists (
+    select 1
+    from public.delivery_agents
+    where id = target_agent
+      and store_id = order_tenant
+      and is_active = true
+  ) then
+    raise exception 'Delivery agent must be active and belong to the order store';
+  end if;
+
+  update public.orders
+  set delivery_agent_id = target_agent
+  where id = target_order;
+
+  return target_agent;
+end;
+$$;
+
+revoke all on function public.auto_assign_order_delivery_agent(uuid, uuid) from public;
+grant execute on function public.auto_assign_order_delivery_agent(uuid, uuid) to service_role;
+
 create or replace function public.update_order_status(target_order uuid, new_status text)
 returns void
 language plpgsql
@@ -675,12 +828,188 @@ begin
   set plan = payment_record.requested_plan_id, status = 'active', updated_at = now()
   where id = payment_record.tenant_id;
 
+  update public.profiles
+  set vendor_status = 'approved', is_vendor_approved = true, role = 'vendor'
+  where id = (
+    select owner_id from public.tenants where id = payment_record.tenant_id
+  );
+
   update public.payment_transactions set status = 'approved' where id = target_payment;
 end;
 $$;
 
 revoke all on function public.review_vendor_payment(uuid, boolean) from public;
 grant execute on function public.review_vendor_payment(uuid, boolean) to authenticated;
+
+create or replace function public.activate_free_subscription()
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  tenant_record public.tenants%rowtype;
+  current_end timestamptz;
+  next_end timestamptz;
+begin
+  if current_user_id is null then
+    raise exception 'Not authorized' using errcode = '42501';
+  end if;
+
+  select * into tenant_record
+  from public.tenants
+  where owner_id = current_user_id
+  for update;
+  if not found then
+    raise exception 'Create your store before activating a subscription';
+  end if;
+
+  if not exists (
+    select 1 from public.plans
+    where id = 'basic' and is_active = true and price = 0
+  ) then
+    raise exception 'The free plan is unavailable';
+  end if;
+
+  select end_date into current_end
+  from public.subscriptions
+  where tenant_id = tenant_record.id
+  for update;
+
+  if tenant_record.status = 'pending' then
+    next_end := greatest(coalesce(current_end, now()), now() + interval '30 days');
+  else
+    next_end := greatest(coalesce(current_end, now()), now()) + interval '30 days';
+  end if;
+
+  insert into public.subscriptions (tenant_id, plan_id, status, start_date, end_date, amount)
+  values (tenant_record.id, 'basic', 'active', now(), next_end, 0)
+  on conflict (tenant_id) do update set
+    plan_id = excluded.plan_id,
+    status = 'active',
+    start_date = now(),
+    end_date = excluded.end_date,
+    grace_until = null,
+    amount = 0;
+
+  update public.tenants
+  set plan = 'basic', status = 'active', updated_at = now()
+  where id = tenant_record.id;
+
+  update public.profiles
+  set requested_plan_id = 'basic',
+      vendor_status = 'approved',
+      is_vendor_approved = true,
+      role = 'vendor'
+  where id = current_user_id;
+end;
+$$;
+
+revoke all on function public.activate_free_subscription() from public;
+grant execute on function public.activate_free_subscription() to authenticated;
+
+create or replace function public.update_vendor_status(target_vendor uuid, new_status text)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized' using errcode = '42501';
+  end if;
+
+  if new_status not in ('approved', 'rejected', 'blocked') then
+    raise exception 'Invalid vendor status';
+  end if;
+
+  update public.profiles
+  set vendor_status = new_status,
+      is_vendor_approved = (new_status = 'approved'),
+      role = 'vendor'
+  where id = target_vendor and role = 'vendor';
+  if not found then
+    raise exception 'Vendor profile not found';
+  end if;
+
+  update public.tenants
+  set status = case when new_status = 'approved' then 'active' else 'blocked' end,
+      updated_at = now()
+  where owner_id = target_vendor;
+end;
+$$;
+
+revoke all on function public.update_vendor_status(uuid, text) from public;
+grant execute on function public.update_vendor_status(uuid, text) to authenticated;
+
+create or replace function public.refresh_vendor_subscription_status(target_tenant uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  tenant_owner uuid;
+  subscription_record public.subscriptions%rowtype;
+  resulting_status text;
+begin
+  select owner_id into tenant_owner
+  from public.tenants
+  where id = target_tenant;
+  if not found then
+    raise exception 'Store not found';
+  end if;
+
+  if auth.uid() is distinct from tenant_owner and not public.is_admin() then
+    raise exception 'Not authorized' using errcode = '42501';
+  end if;
+
+  select * into subscription_record
+  from public.subscriptions
+  where tenant_id = target_tenant
+  for update;
+
+  if found and subscription_record.end_date is not null then
+    if subscription_record.end_date <= now()
+       and subscription_record.status in ('trial', 'active') then
+      update public.subscriptions
+      set status = 'expired',
+          grace_until = coalesce(grace_until, subscription_record.end_date + interval '3 days')
+      where id = subscription_record.id;
+      update public.profiles
+      set vendor_status = 'expired'
+      where id = tenant_owner;
+      subscription_record.status := 'expired';
+      subscription_record.grace_until := coalesce(
+        subscription_record.grace_until,
+        subscription_record.end_date + interval '3 days'
+      );
+    end if;
+
+    if subscription_record.status = 'expired'
+       and coalesce(subscription_record.grace_until, subscription_record.end_date + interval '3 days') <= now() then
+      update public.subscriptions
+      set status = 'blocked'
+      where id = subscription_record.id;
+      update public.profiles
+      set vendor_status = 'blocked'
+      where id = tenant_owner;
+      update public.tenants
+      set status = 'blocked', updated_at = now()
+      where id = target_tenant;
+    end if;
+  end if;
+
+  select vendor_status into resulting_status
+  from public.profiles
+  where id = tenant_owner;
+  return coalesce(resulting_status, 'pending');
+end;
+$$;
+
+revoke all on function public.refresh_vendor_subscription_status(uuid) from public;
+grant execute on function public.refresh_vendor_subscription_status(uuid) to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('payment_proofs', 'payment_proofs', false, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
@@ -693,3 +1022,12 @@ using (bucket_id = 'payment_proofs' and ((storage.foldername(name))[1] = auth.ui
 drop policy if exists payment_proofs_owner_insert on storage.objects;
 create policy payment_proofs_owner_insert on storage.objects for insert to authenticated
 with check (bucket_id = 'payment_proofs' and (storage.foldername(name))[1] = auth.uid()::text);
+
+do $$
+begin
+  if to_regclass('public.admins') is not null then
+    execute 'alter table public.admins enable row level security';
+    execute 'revoke all on table public.admins from anon, authenticated';
+  end if;
+end;
+$$;

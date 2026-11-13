@@ -23,10 +23,11 @@ const STATUS_CONFIG = {
 };
 
 export default function AdminDashboard() {
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("admin_pass") === "AHHioTest2026");
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [adminError, setAdminError] = useState("");
   const [vendors, setVendors] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -36,19 +37,39 @@ export default function AdminDashboard() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (isAdmin) loadAll(); }, [isAdmin]);
+  useEffect(() => {
+    let active = true;
+    async function checkAdmin() {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) return;
 
-  function unlockAdmin(e) {
-    e.preventDefault();
-    if (password !== "AHHioTest2026") { setPasswordError(true); return; }
-    localStorage.setItem("admin_pass", password);
-    setIsAdmin(true);
-  }
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (profileError) throw profileError;
+        if (active) setIsAdmin(profile?.role === "admin");
+      } catch (error) {
+        if (active) setAdminError(error.message || "تعذر التحقق من صلاحية الإدارة");
+      } finally {
+        if (active) setCheckingAdmin(false);
+      }
+    }
+
+    checkAdmin();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => { if (isAdmin) loadAll(); }, [isAdmin]);
 
   async function loadAll() {
     setLoading(true);
     const fields = ["id","email","vendor_status","is_vendor_approved","role","store_logo_url","created_at", ...VENDOR_COLUMNS.map(c => c.key)].join(",");
     const { data: vendorsData } = await supabase.from("profiles").select(fields).not("store_name", "is", null).order("created_at", { ascending: false });
+    const { data: tenantsData } = await supabase.from("tenants").select("id, owner_id, store_name");
     const { data: ordersData } = await supabase.from("orders").select("*").order("id", { ascending: false });
     const { data: productsData } = await supabase.from("products").select("*");
     const { data: paymentsData } = await supabase.from("payment_transactions").select("*").eq("status", "pending").order("created_at", { ascending: false });
@@ -60,6 +81,7 @@ export default function AdminDashboard() {
     }));
 
     setVendors(vendorsData || []);
+    setTenants(tenantsData || []);
     setOrders(ordersData || []);
     setProducts(productsData || []);
     setPayments(paymentsWithReceipts);
@@ -69,7 +91,8 @@ export default function AdminDashboard() {
 
   // helper: جيب اشتراك التاجر + أيامو المتبقية
   const getVendorSub = (vendorId) => {
-    const sub = subscriptions.find(s => s.tenant_id === vendorId || s.owner_id === vendorId);
+    const tenantId = tenants.find((tenant) => tenant.owner_id === vendorId)?.id;
+    const sub = subscriptions.find((item) => item.tenant_id === tenantId);
     if (!sub) return null;
     const plan = PACKAGES[sub.plan_id] || { name: sub.plan_id, price: 0 };
     const daysLeft = sub.end_date ? Math.max(0, Math.ceil((new Date(sub.end_date) - new Date()) / DAY)) : 0;
@@ -79,11 +102,10 @@ export default function AdminDashboard() {
   const updateVendorStatus = async (vendor, newStatus) => {
     const msg = newStatus === "approved" ? `تقبل متجر ${vendor.store_name}؟` : newStatus === "rejected" ? `ترفض متجر ${vendor.store_name}؟` : `تحظر متجر ${vendor.store_name}؟`;
     if (!confirm(msg)) return;
-    const { error } = await supabase.from("profiles").update({
-      vendor_status: newStatus,
-      is_vendor_approved: newStatus === "approved",
-      role: newStatus === "approved" ? "vendor" : "user",
-    }).eq("id", vendor.id);
+    const { error } = await supabase.rpc("update_vendor_status", {
+      target_vendor: vendor.id,
+      new_status: newStatus,
+    });
     if (error) { alert(error.message); return; }
     await loadAll();
   };
@@ -97,33 +119,7 @@ export default function AdminDashboard() {
     if (approve) {
       const planId = payment.requested_plan_id || "pro";
       const plan = PACKAGES[planId] || PACKAGES.pro;
-      const start = new Date();
-      const end = new Date(start.getTime() + (plan.durationDays || 30) * DAY);
-
-      // 1. اقفل أي اشتراك قديم
-      await supabase.from("subscriptions").update({ status: "expired" }).eq("tenant_id", payment.tenant_id).eq("status", "active");
-      // 2. اعمل اشتراك جديد
-      const { error: subError } = await supabase.from("subscriptions").insert({
-        tenant_id: payment.tenant_id,
-        owner_id: payment.tenant_id,
-        plan_id: planId,
-        status: "active",
-        start_date: start.toISOString(),
-        end_date: end.toISOString(),
-      });
-      if (subError) {
-        // لو الجدول ما فيهو owner_id، جرب بدونو
-        await supabase.from("subscriptions").insert({
-          tenant_id: payment.tenant_id,
-          plan_id: planId,
-          status: "active",
-          start_date: start.toISOString(),
-          end_date: end.toISOString(),
-        });
-      }
-      // 3. فعل التاجر
-      await supabase.from("profiles").update({ vendor_status: "approved", is_vendor_approved: true, role: "vendor" }).eq("id", payment.tenant_id);
-      alert(`تم! اشتراك ${plan.name} اتفعل لـ ${plan.durationDays} يوم - بينتهي ${end.toLocaleDateString("ar-SD")}`);
+      alert(`تم اعتماد الدفع وتفعيل اشتراك ${plan.name}.`);
     }
     await loadAll();
   };
@@ -147,15 +143,12 @@ export default function AdminDashboard() {
     return VENDOR_COLUMNS.some(c => String(v[c.key] || "").toLowerCase().includes(q));
   }), [vendors, filter, search]);
 
+  if (checkingAdmin) return <div className="p-8 text-center">جاري التحقق من صلاحية الإدارة...</div>;
+
   if (!isAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#111111] p-4 text-white">
-        <form onSubmit={unlockAdmin} className="w-full max-w-sm rounded-xl bg-[#171717] p-6">
-          <h1 className="mb-4 text-xl font-bold text-[#D4AF37]">دخول الإدارة</h1>
-          <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setPasswordError(false); }} placeholder="كلمة المرور" className="mb-3 w-full rounded border border-white/20 bg-[#111111] px-3 py-2 text-white" />
-          {passwordError && <p className="mb-3 text-sm text-red-400">كلمة المرور غير صحيحة</p>}
-          <button type="submit" className="w-full rounded bg-[#D4AF37] px-3 py-2 font-bold text-black">دخول</button>
-        </form>
+      <div role="alert" className="p-8 text-center text-red-700">
+        {adminError || "لا تملك صلاحية دخول لوحة الإدارة"}
       </div>
     );
   }

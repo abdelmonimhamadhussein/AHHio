@@ -2,9 +2,12 @@ const freePlan = {
   id: 'free',
   planId: 'basic',
   limit: 10,
+  max_products: 10,
+  max_images: 10,
+  durationDays: 30,
   price: 0,
   name: 'مجاناً',
-  features: ['10 صور', 'منتجات غير محدودة', 'دعم عادي']
+  features: ['10 منتجات', '10 صور', 'دعم عادي']
 }
 
 export const PACKAGES = {
@@ -14,6 +17,9 @@ export const PACKAGES = {
     id: 'pro',
     planId: 'pro',
     limit: 100,
+    max_products: 100,
+    max_images: 100,
+    durationDays: 30,
     price: 99,
     name: 'Pro',
     features: ['100 صورة', 'ظهور أعلى', 'دعم سريع']
@@ -22,6 +28,9 @@ export const PACKAGES = {
     id: 'vip',
     planId: 'vip',
     limit: 999999,
+    max_products: 999999,
+    max_images: 999999,
+    durationDays: 30,
     price: 199,
     name: 'VIP',
     features: ['صور غير محدودة', 'توثيق متجرك', 'إعلانات ممولة']

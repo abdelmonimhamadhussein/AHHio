@@ -9,29 +9,43 @@ export default function CreateStore() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [savedPlanId, setSavedPlanId] = useState(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // الباقة الجاي منها من Register - لو ما في، بنجيبها من profiles بعدين
-  const planId = searchParams.get("plan") || "pro";
+  const requestedPlanId = searchParams.get("plan");
+  const planId = requestedPlanId || savedPlanId || "pro";
   const plan = PACKAGES[planId] || PACKAGES.pro;
 
-  // لو التاجر عندو متجر أصلاً، وديهو Billing طوالي، ما يخليه يعمل متجر تاني
   useEffect(() => {
+    let active = true;
     const checkExisting = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) return;
+
+        const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("store_name, store_slug")
+        .select("store_name, store_slug, requested_plan_id")
         .eq("id", user.id)
         .maybeSingle();
-      if (profile?.store_name) {
-        navigate(`/vendor/billing?plan=${planId}`, { replace: true });
+        if (profileError) throw profileError;
+        if (!active) return;
+
+        if (!requestedPlanId && profile?.requested_plan_id) {
+          setSavedPlanId(profile.requested_plan_id);
+        }
+        if (profile?.store_name) {
+          navigate(`/vendor/billing?plan=${requestedPlanId || profile.requested_plan_id || planId}`, { replace: true });
+        }
+      } catch (error) {
+        if (active) setErrorMsg(error.message || "تعذر التحقق من بيانات المتجر");
       }
     };
     checkExisting();
-  }, []);
+    return () => { active = false; };
+  }, [navigate, requestedPlanId, planId]);
 
   const handleNameChange = (val) => {
     setName(val);
@@ -61,64 +75,22 @@ export default function CreateStore() {
     setErrorMsg("");
 
     try {
-      // 1. جيب المستخدم الحالي
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate("/login");
         return;
       }
 
-      // 2. تأكد ان الرابط ما مستخدم قبل كده - في profiles وفي store
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("store_slug", slug)
-        .maybeSingle();
+      const { error: createError } = await supabase.rpc("create_vendor_store", {
+        p_store_name: name.trim(),
+        p_store_slug: slug.trim(),
+        p_store_description: description,
+        p_plan_id: plan.planId,
+      });
+      if (createError) throw createError;
 
-      if (existing && existing.id !== user.id) {
-        setErrorMsg("الرابط ده مستخدم قبل كده، غير اسم المتجر");
-        setLoading(false);
-        return;
-      }
-
-      // 3. انشاء المتجر في جدول store - لو الجدول ما موجود، بنتجاوزو
-      // المصدر الحقيقي هو profiles، و store هو للعرض بس
-      const { error: storeError } = await supabase
-        .from("store")
-        .upsert([
-          {
-            name,
-            slug,
-            owner_id: user.id,
-            description: description || null,
-          },
-        ], { onConflict: "owner_id" });
-
-      // لو جدول store ما موجود أو فيهو مشكلة، ما نوقف التاجر، بنكمل في profiles
-      if (storeError) console.log("store upsert warning:", storeError.message);
-
-      // 4. تحديث profiles - دي النقطة المهمة
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          store_name: name,
-          store_slug: slug,
-          store_description: description || null,
-          role: "vendor",
-          vendor_status: "pending",
-          is_vendor_approved: false,
-          requested_plan_id: plan.id,
-        })
-        .eq("id", user.id);
-
-      if (profileError) throw profileError;
-
-      // 5. نجاح - وديه للـ Billing عشان يدفع، ومعاهو الباقة
-      // ما بنوديهو للداشبورد، لأنه لسه ما دفع
       navigate(`/vendor/billing?plan=${plan.id}`);
-
     } catch (err) {
-      console.log(err);
       setErrorMsg(err.message || "حصل خطأ، حاول تاني");
     } finally {
       setLoading(false);

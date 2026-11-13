@@ -9,6 +9,7 @@ export default function Register() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -19,6 +20,7 @@ export default function Register() {
   const handleRegister = async (e) => {
     e.preventDefault()
     setError("")
+    setSuccess("")
     if (password.length < 6) return setError("كلمة السر اقل من 6 احرف")
     if (!whatsapp.trim()) return setError("ادخل رقم الواتساب")
     setLoading(true)
@@ -26,35 +28,33 @@ export default function Register() {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          data: {
+            role: "vendor",
+            whatsapp: whatsapp.trim(),
+            plan_id: plan.id,
+          },
+        },
       })
       if (error) throw error
 
-      // لو الإيميل محتاج تأكيد، data.user ممكن يكون null
-      // في الحالة دي، بنوديهو لصفحة تسجيل الدخول عشان يأكد
-      let userId = data.user?.id
-
-      // لو مافي user لسه (email confirmation)، جرب نجيبو من الجلسة
-      if (!userId) {
-        const { data: { user } } = await supabase.auth.getUser()
-        userId = user?.id
+      if (!data.session) {
+        setSuccess("تم إنشاء الحساب. افتح بريدك الإلكتروني واضغط على رابط التأكيد، وبعدها سجّل الدخول لمتابعة إنشاء متجرك.")
+        return
       }
 
-      if (userId) {
-        // بنكتب في profiles - نفس الجدول البتستعملو Billing و Admin و useSubscription
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: userId,
-          email: email.trim(),
-          whatsapp: whatsapp.trim(),
-          role: "vendor",
-          vendor_status: "pending", // لسه ما عمل متجر ولا دفع
-          // بنحفظ الباقة الاخترها عشان CreateStore و Billing يلقوها
-          requested_plan_id: plan.id,
-        }, { onConflict: "id" })
-        if (profileError) throw profileError
-      }
+      const userId = data.session.user.id
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: userId,
+        email: email.trim(),
+        whatsapp: whatsapp.trim(),
+        role: "vendor",
+        vendor_status: "pending",
+        requested_plan_id: plan.id,
+      }, { onConflict: "id" })
+      if (profileError) throw profileError
 
-      // بنحول لـ CreateStore ومعانا الباقة، عشان ما تضيع
-      navigate(`/vendor/Create-Store?plan=${plan.id}`)
+      navigate(`/vendor/create-store?plan=${plan.id}`)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -64,13 +64,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <form onSubmit={handleRegister} className="bg-white w-full max-w-md p-8 rounded-xl shadow-lg space-y-4">
-        <h2 className="text-2xl font-bold text-center text-[#00AEEF]">انشاء حساب تاجر</h2>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center text-sm">
-          الباقة المختارة: <span className="font-bold">{plan.name}</span> - {plan.price === 0 ? "مجاناً" : `${plan.price.toLocaleString()} جنيه / ${plan.durationDays} يوم`}
-        </div>
-        
+      <form onSubmit={handleRegister} className="bg-white w-full max-w-md p-8 rounded-xl shadow-lg space-y-5">
         <div>
           <label className="block mb-1">الايميل</label>
           <input className="w-full border p-3 rounded" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
@@ -86,13 +80,22 @@ export default function Register() {
           <input className="w-full border p-3 rounded" type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
         </div>
 
+        <div className="w-full rounded-2xl border-2 border-[#00AEEF] bg-sky-50 p-6 text-center shadow-sm">
+          <p className="mb-2 text-sm font-semibold text-sky-800">الباقة المختارة</p>
+          <p className="text-2xl font-extrabold text-[#007eaa]">{plan.name}</p>
+          <p className="mt-2 text-base font-semibold text-gray-700">
+            {plan.price === 0 ? "مجاناً" : `${plan.price.toLocaleString()} جنيه / ${plan.durationDays} يوم`}
+          </p>
+        </div>
+
         {error && <p className="text-red-500 text-sm">{error}</p>}
+        {success && <p role="status" className="text-green-700 bg-green-50 p-3 rounded text-sm">{success}</p>}
+
+        <p className="text-center text-sm">عندك حساب؟ <Link to="/login" className="text-[#00AEEF]">دخول</Link></p>
 
         <button disabled={loading} className="w-full bg-[#00AEEF] text-white p-3 rounded font-bold">
           {loading ? "جاري..." : "انشاء حساب"}
         </button>
-        
-        <p className="text-center text-sm">عندك حساب؟ <Link to="/login" className="text-[#00AEEF]">دخول</Link></p>
       </form>
     </div>
   )

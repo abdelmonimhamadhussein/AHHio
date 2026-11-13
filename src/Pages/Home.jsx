@@ -11,7 +11,7 @@ export default function Home() {
     async function load() {
       const { data: tenants } = await supabase
         .from("tenants")
-        .select("*")
+        .select("id, store_name, slug, city, logo_url, rating, is_verified")
         .eq("status", "active")
         .order("rating", { ascending: false })
         .limit(8);
