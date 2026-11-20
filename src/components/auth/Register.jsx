@@ -72,7 +72,7 @@ export default function Register() {
 
         <div>
           <label className="block mb-1">واتساب</label>
-          <input className="w-full border p-3 rounded" value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} placeholder="0912345678" required />
+          <input className="w-full border p-3 rounded" value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} placeholder="09xxxxxxxx" required />
         </div>
 
         <div>

@@ -49,7 +49,7 @@ export default function CreateStore() {
 
   const handleNameChange = (val) => {
     setName(val);
-    // تحويل الاسم لرابط نظيف: Hejzy Store -> hejzy-store
+    // تحويل الاسم لرابط نظيف: Here Store -> here-store
     // بنسمح بالإنجليزي والأرقام بس، عشان الرابط يشتغل صح
     setSlug(
       val
@@ -118,7 +118,7 @@ export default function CreateStore() {
           type="text"
           value={name}
           onChange={(e) => handleNameChange(e.target.value)}
-          placeholder="مثلا: HejzyStore"
+          placeholder="مثلا: HereStore"
           className="w-full border rounded-xl p-3 mt-1 mb-4 outline-none focus:ring-2 focus:ring-blue-500"
         />
 
@@ -130,7 +130,7 @@ export default function CreateStore() {
             placeholder="mo-store"
             className="flex-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <span className="text-sm text-gray-500">.ahhio.com</span>
+          <span className="text-sm text-gray-500">.ah-hio-amh.vercel.app</span>
         </div>
 
         <label className="text-sm font-medium block mt-4">وصف المتجر</label>
