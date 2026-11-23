@@ -2,21 +2,50 @@ import { supabase } from '../lib/supabase'
 
 export const brain = {
   name: 'منعم',
-  async remember(user_id, key, value) {
+  async remember(user_id, key, value, tenant_id) {
     try {
-      await supabase.from('ai_memory').insert({ user_id, key, value })
-    } catch (e) { console.log('memory skip', e.message) }
+      const { error } = await supabase.from('ai_memory').insert({ user_id, tenant_id, key, value })
+      if (error) {
+        console.error('Failed to save AI memory:', error)
+        return { success: false, error }
+      }
+      return { success: true, error: null }
+    } catch (error) {
+      console.error('Failed to save AI memory:', error)
+      return { success: false, error }
+    }
   },
-  async recall(user_id) {
+  async recall(user_id, tenant_id) {
+    if (!tenant_id) return []
     try {
-      const { data } = await supabase.from('ai_memory').select('*').eq('user_id', user_id).order('created_at', { ascending: false }).limit(10)
+      const { data, error } = await supabase.from('ai_memory')
+        .select('*')
+        .eq('user_id', user_id)
+        .eq('tenant_id', tenant_id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (error) {
+        console.error('Failed to load AI memory:', error)
+        return []
+      }
       return data || []
-    } catch { return [] }
+    } catch (error) {
+      console.error('Failed to load AI memory:', error)
+      return []
+    }
   },
   async saveChat(user_id, question, answer) {
     try {
-      await supabase.from('ai_conversations').insert({ user_id, question, answer })
-    } catch {}
+      const { error } = await supabase.from('ai_conversations').insert({ user_id, question, answer })
+      if (error) {
+        console.error('Failed to save AI conversation:', error)
+        return { success: false, error }
+      }
+      return { success: true, error: null }
+    } catch (error) {
+      console.error('Failed to save AI conversation:', error)
+      return { success: false, error }
+    }
   },
   understand(q) {
     const text = q.toLowerCase()

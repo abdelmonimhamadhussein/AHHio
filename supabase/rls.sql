@@ -135,6 +135,25 @@ create table if not exists public.products (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.ai_memory (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  tenant_id uuid references public.tenants(id) on delete cascade,
+  key text not null,
+  value text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.ai_memory add column if not exists tenant_id uuid references public.tenants(id) on delete cascade;
+
+create table if not exists public.ai_conversations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  question text not null,
+  answer text not null,
+  created_at timestamptz not null default now()
+);
+
 alter table public.products add column if not exists tenant_id uuid references public.tenants(id) on delete cascade;
 alter table public.products add column if not exists images jsonb default '[]'::jsonb;
 alter table public.products add column if not exists is_active boolean default true;
@@ -275,6 +294,8 @@ alter table public.profiles enable row level security;
 alter table public.plans enable row level security;
 alter table public.tenants enable row level security;
 alter table public.products enable row level security;
+alter table public.ai_memory enable row level security;
+alter table public.ai_conversations enable row level security;
 alter table public.orders enable row level security;
 alter table public.delivery_agents enable row level security;
 alter table public.subscriptions enable row level security;
@@ -283,6 +304,20 @@ alter table public.renew_requests enable row level security;
 
 drop policy if exists plans_public_read on public.plans;
 create policy plans_public_read on public.plans for select to anon, authenticated using (is_active = true);
+
+drop policy if exists ai_memory_select_self on public.ai_memory;
+create policy ai_memory_select_self on public.ai_memory for select to authenticated
+using (user_id = auth.uid());
+drop policy if exists ai_memory_insert_self on public.ai_memory;
+create policy ai_memory_insert_self on public.ai_memory for insert to authenticated
+with check (user_id = auth.uid());
+
+drop policy if exists ai_conversations_select_self on public.ai_conversations;
+create policy ai_conversations_select_self on public.ai_conversations for select to authenticated
+using (user_id = auth.uid());
+drop policy if exists ai_conversations_insert_self on public.ai_conversations;
+create policy ai_conversations_insert_self on public.ai_conversations for insert to authenticated
+with check (user_id = auth.uid());
 
 drop policy if exists profiles_self_access on public.profiles;
 drop policy if exists profiles_select_self on public.profiles;

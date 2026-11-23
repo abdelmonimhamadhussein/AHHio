@@ -61,13 +61,18 @@ export default function CreateStore() {
   };
 
   const handleCreate = async () => {
-    if (!name || !slug) return;
-    // الـ slug لازم يكون إنجليزي، لو التاجر كتب عربي، حيكون فاضي
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      setErrorMsg("رابط المتجر لازم يكون بالإنجليزي والأرقام بس، مثلاً: mo-store");
+    const storeName = name.trim();
+    if (!storeName) {
+      setErrorMsg("اكتب اسم المتجر");
       return;
     }
-    if (slug.length < 3) {
+
+    const storeSlug = slug.trim();
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storeSlug)) {
+      setErrorMsg("رابط المتجر لازم يتكوّن من حروف إنجليزية صغيرة وأرقام، وبين الكلمات شرطة واحدة فقط، بدون مسافات أو رموز. مثال: mo-store");
+      return;
+    }
+    if (storeSlug.length < 3) {
       setErrorMsg("رابط المتجر قصير شديد، خليهو 3 حروف على الأقل");
       return;
     }
@@ -82,8 +87,8 @@ export default function CreateStore() {
       }
 
       const { error: createError } = await supabase.rpc("create_vendor_store", {
-        p_store_name: name.trim(),
-        p_store_slug: slug.trim(),
+        p_store_name: storeName,
+        p_store_slug: storeSlug,
         p_store_description: description,
         p_plan_id: plan.planId,
       });
@@ -126,7 +131,7 @@ export default function CreateStore() {
         <div className="flex items-center gap-2 mt-1">
           <input
             value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+            onChange={(e) => setSlug(e.target.value.toLowerCase())}
             placeholder="mo-store"
             className="flex-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -144,7 +149,7 @@ export default function CreateStore() {
 
         <button
           onClick={handleCreate}
-          disabled={!name || !slug || loading}
+          disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 mt-2 font-medium disabled:opacity-30"
         >
           {loading ? "جاري انشاء متجرك..." : "انشاء متجرك"}

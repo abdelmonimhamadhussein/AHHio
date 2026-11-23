@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -67,27 +68,62 @@ export default function AdminDashboard() {
 
   async function loadAll() {
     setLoading(true);
-    const fields = ["id","email","vendor_status","is_vendor_approved","role","store_logo_url","created_at", ...VENDOR_COLUMNS.map(c => c.key)].join(",");
-    const { data: vendorsData } = await supabase.from("profiles").select(fields).not("store_name", "is", null).order("created_at", { ascending: false });
-    const { data: tenantsData } = await supabase.from("tenants").select("id, owner_id, store_name");
-    const { data: ordersData } = await supabase.from("orders").select("*").order("id", { ascending: false });
-    const { data: productsData } = await supabase.from("products").select("*");
-    const { data: paymentsData } = await supabase.from("payment_transactions").select("*").eq("status", "pending").order("created_at", { ascending: false });
-    const { data: subsData } = await supabase.from("subscriptions").select("*").order("end_date", { ascending: false });
+    setLoadError("");
+    try {
+      const fields = ["id","email","vendor_status","is_vendor_approved","role","store_logo_url","created_at", ...VENDOR_COLUMNS.map(c => c.key)].join(",");
+      const [
+        vendorsResult,
+        tenantsResult,
+        ordersResult,
+        productsResult,
+        paymentsResult,
+        subscriptionsResult,
+      ] = await Promise.all([
+        supabase.from("profiles").select(fields).not("store_name", "is", null).order("created_at", { ascending: false }),
+        supabase.from("tenants").select("id, owner_id, store_name"),
+        supabase.from("orders").select("*").order("id", { ascending: false }),
+        supabase.from("products").select("*"),
+        supabase.from("payment_transactions").select("*").eq("status", "pending").order("created_at", { ascending: false }),
+        supabase.from("subscriptions").select("*").order("end_date", { ascending: false }),
+      ]);
 
-    const paymentsWithReceipts = await Promise.all((paymentsData || []).map(async (p) => {
-      const { data } = await supabase.storage.from("payment_proofs").createSignedUrl(p.screenshot_url, 300);
-      return { ...p, receiptUrl: data?.signedUrl || "" };
-    }));
+      const loadFailures = [
+        [vendorsResult.error, "تعذر تحميل التجار"],
+        [tenantsResult.error, "تعذر تحميل المتاجر"],
+        [ordersResult.error, "تعذر تحميل الطلبات"],
+        [productsResult.error, "تعذر تحميل المنتجات"],
+        [paymentsResult.error, "تعذر تحميل المدفوعات"],
+        [subscriptionsResult.error, "تعذر تحميل الاشتراكات"],
+      ].filter(([error]) => error);
+      if (loadFailures.length) {
+        loadFailures.forEach(([error, message]) => console.error(`${message}:`, error));
+        throw new Error(loadFailures.map(([, message]) => message).join(" • "));
+      }
 
-    setVendors(vendorsData || []);
-    setTenants(tenantsData || []);
-    setOrders(ordersData || []);
-    setProducts(productsData || []);
-    setPayments(paymentsWithReceipts);
-    setSubscriptions(subsData || []);
-    setLoading(false);
+      const paymentsWithReceipts = await Promise.all((paymentsResult.data || []).map(async (payment) => {
+        const { data } = await supabase.storage.from("payment_proofs").createSignedUrl(payment.screenshot_url, 300);
+        return { ...payment, receiptUrl: data?.signedUrl || "" };
+      }));
+
+      setVendors(vendorsResult.data || []);
+      setTenants(tenantsResult.data || []);
+      setOrders(ordersResult.data || []);
+      setProducts(productsResult.data || []);
+      setPayments(paymentsWithReceipts);
+      setSubscriptions(subscriptionsResult.data || []);
+    } catch (error) {
+      console.error("Failed to load admin dashboard data:", error);
+      setLoadError(typeof error === "string" ? error : error?.message || "تعذر تحميل بيانات لوحة الإدارة");
+    } finally {
+      setLoading(false);
+    }
   }
+
+  const getVendorForTenant = (tenantId) => {
+    const tenant = tenants.find((item) => item.id === tenantId);
+    if (!tenant) return null;
+    return vendors.find((vendor) => vendor.id === tenant.owner_id) || tenant;
+  };
 
   // helper: جيب اشتراك التاجر + أيامو المتبقية
   const getVendorSub = (vendorId) => {
@@ -124,11 +160,6 @@ export default function AdminDashboard() {
     await loadAll();
   };
 
-  const deleteVendor = async (vendor) => {
-    if (!confirm(`متاكد تحظر ${vendor.store_name}؟`)) return;
-    await updateVendorStatus(vendor, "blocked");
-  };
-
   const stats = useMemo(() => ({
     pending: vendors.filter(v => v.vendor_status === "pending").length,
     approved: vendors.filter(v => v.vendor_status === "approved").length,
@@ -156,6 +187,8 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#111111] p-4 text-white">
       <h1 className="mb-2 text-3xl font-black text-[#D4AF37]">Admin - لوحة التحكم</h1>
+      {loading && <p role="status" className="mb-4 text-sm text-white/70">جاري تحميل بيانات لوحة الإدارة...</p>}
+      {loadError && <p role="alert" className="mb-4 rounded-lg bg-red-900/40 p-3 text-sm text-red-200">{loadError}</p>}
       <p className="text-sm text-white/50 mb-6">في الانتظار: {stats.pending} • مقبولين: {stats.approved} • منتهي: {stats.expired} • اشتراكات نشطة: {stats.activeSubs}</p>
 
       <div className="mb-6 grid gap-3 md:grid-cols-4">
@@ -199,8 +232,7 @@ export default function AdminDashboard() {
                     <button onClick={()=>updateVendorStatus(v,"approved")} className="rounded bg-emerald-700 px-3 py-1 text-sm font-bold">قبول ✅</button>
                     <button onClick={()=>updateVendorStatus(v,"rejected")} className="rounded bg-red-800 px-3 py-1 text-sm font-bold">رفض ❌</button>
                   </>}
-                  {v.vendor_status === "approved" && <button onClick={()=>updateVendorStatus(v,"blocked")} className="rounded bg-white/10 px-3 py-1 text-sm">حظر</button>}
-                  <button onClick={()=>deleteVendor(v)} className="text-sm text-red-400">حظر</button>
+                  <button onClick={()=>updateVendorStatus(v,"blocked")} className="text-sm text-red-400">حظر</button>
                 </div>
               </div>
               );
@@ -216,7 +248,7 @@ export default function AdminDashboard() {
           {payments.length===0 && <p className="text-sm text-white/60">لا توجد طلبات معلقة</p>}
           <div className="grid gap-3 md:grid-cols-2">
             {payments.map(p => {
-              const vendor = vendors.find(v=>v.id===p.tenant_id || v.id===p.owner_id || v.id===p.user_id);
+              const vendor = getVendorForTenant(p.tenant_id);
               const plan = PACKAGES[p.requested_plan_id] || { name: p.requested_plan_id, price: p.amount };
               return (
                 <article key={p.id} className="rounded-lg border border-white/10 p-3">
@@ -239,7 +271,7 @@ export default function AdminDashboard() {
         <div className="rounded-xl bg-[#171717] p-4">
           <h2 className="mb-3 text-lg font-bold text-[#D4AF37]">كل الاشتراكات</h2>
           {subscriptions.map(s => {
-            const vendor = vendors.find(v=>v.id===s.tenant_id || v.id===s.owner_id);
+            const vendor = getVendorForTenant(s.tenant_id);
             const plan = PACKAGES[s.plan_id] || { name: s.plan_id };
             const daysLeft = s.end_date ? Math.max(0, Math.ceil((new Date(s.end_date) - new Date()) / DAY)) : 0;
             return (
@@ -257,7 +289,7 @@ export default function AdminDashboard() {
         <div className="rounded-xl bg-[#171717] p-4">
           <h2 className="mb-3 text-lg font-bold text-[#D4AF37]">كل الطلبات</h2>
           {orders.map(o => {
-            const vendor = vendors.find(v=>v.id===o.tenant_id || v.id===o.owner_id);
+            const vendor = getVendorForTenant(o.tenant_id);
             return (
               <div key={o.id} className="border-b border-white/10 py-2 text-sm">
                 <div className="flex justify-between"><span className="font-bold">{vendor?.store_name || "متجر"}</span><span className="rounded bg-[#D4AF37]/15 px-2 text-[#D4AF37]">{o.status}</span></div>
