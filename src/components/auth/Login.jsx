@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase"
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState("")
   const navigate = useNavigate()
@@ -89,9 +90,14 @@ export default function Login() {
           </div>
           <div>
           <label>كلمة المرور</label>
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
-             required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-blue
-              focus:border-blue-500 outline-none" placeholder="" />
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} value={password} onChange={e=>setPassword(e.target.value)}
+               required className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-black bg-blue
+                focus:border-blue-500 outline-none" placeholder="" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2" aria-label={showPassword ? "إخفاء كلمة السر" : "إظهار كلمة السر"}>
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
           </div>
           {msg && <p className="text-sm text-center text-red-500 bg-red-50 py-2 rounded">{msg}</p>}
           <button disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg"> {loading ? "جاري..." : "تسجيل دخول"} </button>
