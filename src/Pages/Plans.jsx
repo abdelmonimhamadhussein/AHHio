@@ -4,7 +4,7 @@ import { formatCurrency } from "../lib/currency";
 
 export default function Plans() {
   // بنجيب الباقات من PACKAGES أوتوماتيك - لو ضفت باقة جديدة، بتظهر هنا براها
-  const plans = Object.values(PACKAGES);
+  const plans = Object.values(PACKAGES).filter((plan) => plan.id !== "basic");
 
   return (
     <main className="min-h-screen bg-white p-8 text-black" dir="rtl">
