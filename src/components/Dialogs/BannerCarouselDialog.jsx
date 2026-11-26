@@ -14,7 +14,7 @@ const banners = [
   {
     id: 2,
     title: "توصيل مجاني",
-    subtitle: "للطلبات فوق 100 الف جنيه داخل الخرطوم",
+    subtitle: "للطلبات فوق 100,000 SDG داخل الخرطوم",
     image: "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=1200",
     color: "from-blue-600 to-cyan-500"
   },

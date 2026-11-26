@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { PACKAGES } from "../../lib/Package";
+import { formatCurrency } from "../../lib/currency";
 
 export default function CreateStore() {
   const [name, setName] = useState("");
@@ -109,7 +110,7 @@ export default function CreateStore() {
         <p className="text-sm text-gray-500 mb-6">15 دقيقة ومتجرك يكون جاهز</p>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center text-sm mb-4">
-          الباقة المختارة: <span className="font-bold">{plan.name}</span> - {plan.price === 0 ? "مجاناً" : `${plan.price.toLocaleString()} جنيه / ${plan.durationDays} يوم`}
+          الباقة المختارة: <span className="font-bold">{plan.name}</span> - {plan.price === 0 ? "مجاناً" : `${formatCurrency(plan.price)} / ${plan.durationDays} يوم`}
         </div>
 
         {errorMsg && (

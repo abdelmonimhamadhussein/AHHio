@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { brain } from '../service/brain'
+import { formatCurrency } from '../lib/currency'
 
 function getErrorMessage(error) {
   if (typeof error === 'string') return error
@@ -73,7 +74,7 @@ export default function AiTools({ storeId }) {
             .abortSignal(controller.signal)
           if (error) throw error
           if (!data?.length) result = `والله يا استاذ فتشت ليك، ما لقيت منتج اسمو "${q}"\nجرب اسم تاني؟`
-          else result = `لقيتهم ليك يا استاذ 👌\n` + data.map((p) => `📦 ${p.name} - ${p.price} SDG`).join('\n') + `\n\nداير واحد فيهم؟`
+          else result = `لقيتهم ليك يا استاذ 👌\n` + data.map((p) => `📦 ${p.name} - ${formatCurrency(p.price)}`).join('\n') + `\n\nداير واحد فيهم؟`
         }
       }
 

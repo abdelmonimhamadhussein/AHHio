@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../components/context/CartContext";
 import { supabase } from "../lib/supabase";
+import { formatCurrency } from "../lib/currency";
+import { saveLastOrder } from "../lib/lastOrder";
 
 export default function Checkout() {
   const { items, clearCart } = useCart();
@@ -37,7 +39,8 @@ export default function Checkout() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const requestedOrders = Object.entries(grouped).map(([tenantKey, tenantItems]) => ({
+      const orderGroups = Object.entries(grouped);
+      const requestedOrders = orderGroups.map(([tenantKey, tenantItems]) => ({
         tenant_id: getRealTenantId(tenantKey),
         items: tenantItems.map((item) => ({ id: item.id, qty: Number(item.qty || 1) })),
       }));
@@ -61,13 +64,29 @@ export default function Checkout() {
         console.error("Order created, but queue jobs were not scheduled:", queueError);
       }
 
+      const customer = { name, phone, city, address };
+      const orderData = {
+        orders: (Array.isArray(data) ? data : []).map((order, index) => ({
+          ...order,
+          items: (orderGroups[index]?.[1] || []).map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price || 0),
+            qty: Number(item.qty || 1),
+          })),
+        })),
+        customer,
+        savedAt: new Date().toISOString(),
+      };
+      try {
+        saveLastOrder(orderData);
+      } catch (storageError) {
+        console.error("Order was created, but could not be saved on this device:", storageError);
+        orderData.storageWarning = "تعذر حفظ الطلب على هذا الجهاز، احتفظ برقم الطلب.";
+      }
+
       clearCart();
-      navigate("/order-success", {
-        state: {
-          orders: data || [],
-          customer: { name, phone, city, address },
-        },
-      });
+      navigate("/order-success", { state: orderData });
     } catch (error) {
       setSubmitError(error.message || "تعذر إرسال الطلب");
     } finally {
@@ -93,15 +112,21 @@ export default function Checkout() {
 
         <div className="mt-5 rounded-lg border border-black bg-white p-4 text-black">
           <div>عدد المتاجر: {Object.keys(grouped).length}</div>
-          <div className="mt-3 flex justify-between text-sm"><span>المجموع الفرعي</span><span>{subtotal.toLocaleString()} SDG</span></div>
-          <div className="mt-2 flex justify-between text-sm"><span>رسوم التوصيل</span><span>{deliveryFee.toLocaleString()} SDG</span></div>
-          <div className="mt-2 flex justify-between text-sm"><span>الضريبة</span><span>{tax.toLocaleString()} SDG</span></div>
-          <div className="mt-3 border-t border-black pt-3 text-2xl font-black text-black">الإجمالي: {total.toLocaleString()} SDG</div>
+          <div className="mt-3 flex justify-between text-sm"><span>المجموع الفرعي</span><span>{formatCurrency(subtotal)}</span></div>
+          <div className="mt-2 flex justify-between text-sm"><span>رسوم التوصيل</span><span>{formatCurrency(deliveryFee)}</span></div>
+          <div className="mt-2 flex justify-between text-sm"><span>الضريبة</span><span>{formatCurrency(tax)}</span></div>
+          <div className="mt-3 border-t border-black pt-3 text-2xl font-black text-black">الإجمالي: {formatCurrency(total)}</div>
         </div>
 
         <button onClick={handleOrder} disabled={submitting} className="mt-6 w-full rounded-lg bg-[#0EA5E9] px-5 py-3 text-lg font-black text-white hover:bg-[#0284C7] disabled:opacity-60">
           {submitting ? "جارٍ إرسال الطلب..." : "تأكيد الطلب"}
         </button>
+        <p className="mt-4 text-center text-sm">
+          لديك حساب؟{" "}
+          <Link to="/login?next=%2Fcheckout" className="font-bold text-sky-700 underline">
+            تسجيل الدخول والعودة للدفع
+          </Link>
+        </p>
       </div>
     </div>
   );

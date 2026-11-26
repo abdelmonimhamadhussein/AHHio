@@ -47,6 +47,9 @@ export default function Navbar() {
 
           {user ? (
             <div className='flex items-center gap-2'>
+              {user?.role === 'customer' && (
+                <Link to='/orders' className='rounded border border-white/30 px-2 py-1 text-sm text-white'>طلباتي</Link>
+              )}
               {isVendor && (
                   <Link to='/vendor' className='flex items-center gap-1 rounded bg-sky-500 px-3 py-1 text-sm font-medium text-white'>
                   <LayoutDashboard size={16} /> لوحتي

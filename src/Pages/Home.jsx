@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { formatCurrency } from "../lib/currency";
 
 export default function Home() {
   const [stores, setStores] = useState([]);
@@ -83,7 +84,7 @@ export default function Home() {
                 <div className="text-sm text-black">{product.tenant?.store_name || "متجر"}</div>
                 <h3 className="mt-2 truncate font-bold text-black">{product.name}</h3>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-lg font-black text-black">{Number(product.price || 0).toLocaleString()} SDG</span>
+                  <span className="text-lg font-black text-black">{formatCurrency(product.price)}</span>
                   <span className="text-xs text-black">{product.stock || 0} في المخزن</span>
                 </div>
               </div>

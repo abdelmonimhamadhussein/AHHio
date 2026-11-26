@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../../lib/supabase";
+import { formatCurrency } from "../../lib/currency";
 
 export default function AdminOrders() {
 
@@ -79,7 +80,7 @@ if(error) alert(error.message || 'فشل التحديث')
         <h1>فاتوةAHHio - ${order.id}</h1>
         <p>العميل:${order.customer_name || order.customer || "-"}</p>
         <p>التلفون:${order.customer_phone || order.phone || "-"}</p>
-        <p>المبلغ:${order.total || 0} جنيه</p>
+        <p>المبلغ:${formatCurrency(order.total)}</p>
     `);
     printWindow.document.close();
     printWindow.print();
@@ -120,7 +121,7 @@ if(error) alert(error.message || 'فشل التحديث')
                     <tr key={order.id} className="border-t text-center">
                         <td>{order.id}</td>
                         <td>{order.customer_name || order.customer} <br/><span>{order.customer_phone || order.phone}</span></td>
-                        <td>{order.total}جنيه</td>
+                        <td>{formatCurrency(order.total)}</td>
                         <td>{order.status}</td>
 
                         <td className="flex gap-2 justify-center p-2">

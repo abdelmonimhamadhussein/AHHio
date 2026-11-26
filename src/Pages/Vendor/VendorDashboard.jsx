@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import useSubscription from "../../hooks/useSubscription";
 import OnboardingCheckList from "../../components/Vendor/OnboardingChecklist";
 import StoreSettings from "../../components/Vendor/vendorSettings";
+import { formatCurrency } from "../../lib/currency";
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
@@ -213,7 +214,7 @@ export default function VendorDashboard() {
                   <img src={product.images?.[0] || product.image_url || "https://placehold.co/600x400/fff/000?text=AHHio"} alt={product.name} className="h-48 w-full object-cover" />
                   <div className="p-4">
                     <h3 className="font-bold">{product.name}</h3>
-                    <p className="mt-2 text-lg font-black">{Number(product.price || 0).toLocaleString()} SDG</p>
+                    <p className="mt-2 text-lg font-black">{formatCurrency(product.price)}</p>
                     <p className="mt-2 text-sm">المخزون: {product.stock || 0}</p>
                     <Link to={`/vendor/edit-product/${product.id}`} className="mt-3 inline-block rounded-lg border px-3 py-1 text-sm font-bold">تعديل</Link>
                   </div>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { PACKAGES } from "../lib/Package";
+import { formatCurrency } from "../lib/currency";
 
 export default function Plans() {
   // بنجيب الباقات من PACKAGES أوتوماتيك - لو ضفت باقة جديدة، بتظهر هنا براها
@@ -18,7 +19,7 @@ export default function Plans() {
             {plan.isPopular && <span className="absolute -top-3 right-5 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">الأكثر طلباً</span>}
             <h2 className="text-xl font-bold">{plan.name}</h2>
             <p className="my-4 text-3xl font-black">
-              {plan.price === 0 ? "مجاناً" : `${plan.price.toLocaleString()} جنيه`}
+              {plan.price === 0 ? "مجاناً" : formatCurrency(plan.price)}
               <small className="text-sm font-normal text-gray-500"> {plan.price === 0 ? "" : plan.durationDays === 365 ? "/ سنة" : "/ شهر"}</small>
             </p>
             <p className="text-xs text-gray-500 mb-4">المدة: {plan.durationDays} يوم • {plan.max_products === 9999 ? "منتجات لا محدودة" : `${plan.max_products} منتج`}</p>

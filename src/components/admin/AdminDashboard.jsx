@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../../lib/supabase";
 import { Link } from "react-router-dom";
 import { PACKAGES } from "../../lib/Package";
+import { formatCurrency } from "../../lib/currency";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -254,7 +255,7 @@ export default function AdminDashboard() {
                 <article key={p.id} className="rounded-lg border border-white/10 p-3">
                   <p className="font-bold">{vendor?.store_name || "متجر"} · باقة {plan.name}</p>
                   <p className="mt-1 text-sm text-white/70">رقم العملية: {p.txn_number}</p>
-                  <p className="text-sm text-white/70">المبلغ: {Number(p.amount).toLocaleString()} جنيه • مدة الباقة: {plan.durationDays || 30} يوم</p>
+                  <p className="text-sm text-white/70">المبلغ: {formatCurrency(p.amount)} • مدة الباقة: {plan.durationDays || 30} يوم</p>
                   {p.receiptUrl && <a href={p.receiptUrl} target="_blank" rel="noreferrer"><img src={p.receiptUrl} className="h-40 w-full rounded object-contain mt-3" alt="" /></a>}
                   <div className="mt-3 flex gap-2">
                     <button onClick={()=>reviewPayment(p,true)} className="rounded bg-emerald-700 px-3 py-2 text-sm font-bold">اعتماد + تفعيل {plan.durationDays || 30} يوم</button>
@@ -293,7 +294,7 @@ export default function AdminDashboard() {
             return (
               <div key={o.id} className="border-b border-white/10 py-2 text-sm">
                 <div className="flex justify-between"><span className="font-bold">{vendor?.store_name || "متجر"}</span><span className="rounded bg-[#D4AF37]/15 px-2 text-[#D4AF37]">{o.status}</span></div>
-                <p className="text-white/70">{o.customer_name} - {Number(o.total||0).toLocaleString()} SDG</p>
+                <p className="text-white/70">{o.customer_name} - {formatCurrency(o.total)}</p>
               </div>
             );
           })}

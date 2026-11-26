@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useCart } from "../context/CartContext";
+import { formatCurrency } from "../../lib/currency";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -55,7 +56,7 @@ export default function ProductDetails() {
         <div className="space-y-4">
           <p className="text-sm text-black">{store?.store_name || "المتجر"}</p>
           <h1 className="text-3xl font-bold text-black">{product.name}</h1>
-          <p className="text-2xl font-bold text-black">{product.price} جنيه</p>
+          <p className="text-2xl font-bold text-black">{formatCurrency(product.price)}</p>
           <p className="text-black">{product.description || product.desc}</p>
 
           <div className="flex gap-3">

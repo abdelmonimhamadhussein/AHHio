@@ -35,6 +35,16 @@ export default function Login() {
         return
       }
 
+      if (next === "/checkout") {
+        navigate("/checkout")
+        return
+      }
+
+      if (profile?.role === "customer") {
+        navigate(next === "/orders" ? "/orders" : "/shop")
+        return
+      }
+
       // 2. لو تاجر لكن لسه ما عمل متجر -> وديهو CreateStore
       if (!profile?.store_name) {
         navigate("/vendor/create-store")
@@ -51,9 +61,8 @@ export default function Login() {
       // 4. لو محظور -> وديهو الداشبورد، والداشبورد هو البيوريهو رسالة الحظر
       // ما بنمنعو من الدخول هنا، عشان يعرف ليه محظور
 
-      // 5. لو كان جاي من PrivateRoute وعندو next، وديهو ليها
-      // بس نتأكد إنها مسار آمن وجوّا /vendor أو /admin
-      if (next && (next.startsWith("/vendor/") || next.startsWith("/admin"))) {
+      // Preserve approved in-app destinations after authentication.
+      if (next && (next.startsWith("/vendor/") || next.startsWith("/admin") || next === "/orders")) {
         navigate(next)
         return
       }

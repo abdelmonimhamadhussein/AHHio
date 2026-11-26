@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { formatCurrency } from "../../lib/currency";
 
 export default function CartPage() {
   const { items, removeFromCart, clearCart } = useCart();
@@ -38,7 +39,7 @@ export default function CartPage() {
           <div key={tenantId} className="mb-5 rounded-lg border border-black bg-white p-4">
             <div className="mb-3 flex items-center justify-between border-b border-black pb-3">
               <h2 className="text-lg font-black text-black">المتجر: {list[0]?.seller?.store_name || "متجر"}</h2>
-              <span className="text-black">المجموع: {subtotal.toLocaleString()} SDG</span>
+              <span className="text-black">المجموع: {formatCurrency(subtotal)}</span>
             </div>
 
             {list.map((item) => (
@@ -52,7 +53,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="font-black text-black">{(Number(item.price || 0) * Number(item.qty || 1)).toLocaleString()} SDG</span>
+                  <span className="font-black text-black">{formatCurrency(Number(item.price || 0) * Number(item.qty || 1))}</span>
                   <button onClick={() => removeFromCart(item.id)} className="text-sm text-black">حذف</button>
                 </div>
               </div>
@@ -64,7 +65,7 @@ export default function CartPage() {
       <div className="mt-6 rounded-lg border border-black bg-white p-5">
         <div className="flex items-center justify-between text-2xl font-black text-black">
           <span>الإجمالي</span>
-          <span>{total.toLocaleString()} SDG</span>
+          <span>{formatCurrency(total)}</span>
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link to="/checkout" className="flex-1 rounded-lg bg-[#0EA5E9] px-5 py-3 text-center font-bold text-white hover:bg-[#0284C7]">إتمام الطلب</Link>

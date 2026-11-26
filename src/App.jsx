@@ -6,6 +6,7 @@ const Home = lazy(() => import("./Pages/Home"));
 const ShopPage = lazy(() => import("./components/product/ShopPage"));
 const ProductDetails = lazy(() => import("./components/product/ProductDetails"));
 const Checkout = lazy(() => import("./Pages/Checkout"));
+const OrdersPage = lazy(() => import("./Pages/Orders"));
 const Plans = lazy(() => import("./Pages/Plans"));
 const OrderSuccess = lazy(() => import("./Pages/Vendor/OrderSuccess"));
 const VendorOrders = lazy(() => import("./Pages/Vendor/Orders"));
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/orders" element={<OrdersPage />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/store/:slug" element={<StorePage />} />
 

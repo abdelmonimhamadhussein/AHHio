@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { PACKAGES } from "../../lib/Package";
 import useSubscription from "../../hooks/useSubscription";
+import { formatCurrency } from "../../lib/currency";
 
 const BANK_ACCOUNT = "3496179";
 
@@ -121,7 +122,7 @@ export default function Billing() {
         <div className="flex gap-2 mt-4 flex-wrap">
           {Object.values(PACKAGES).map(p => (
             <button key={p.id} type="button" onClick={() => { setSelectedPlanId(p.id); setMessage(""); }} className={`px-3 py-1.5 rounded-full text-sm font-bold border ${selectedPlanId === p.id ? "bg-[#0EA5E9] text-white border-[#0EA5E9]" : "bg-white text-black border-gray-300"}`}>
-              {p.name} - {p.price === 0 ? "مجاناً" : `${p.price.toLocaleString()} ج`}
+              {p.name} - {p.price === 0 ? "مجاناً" : formatCurrency(p.price)}
             </button>
           ))}
         </div>
@@ -129,7 +130,7 @@ export default function Billing() {
         {!isFreePlan && (
           <>
             <div className="mt-4 rounded-lg border border-black bg-white p-4">
-              <div className="text-sm text-black">رقم الحساب - حول فيهو {plan.price.toLocaleString()} جنيه</div>
+              <div className="text-sm text-black">رقم الحساب - حول فيهو {formatCurrency(plan.price)}</div>
               <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="text-xl font-black text-black">{BANK_ACCOUNT}</div>
                 <button onClick={() => navigator.clipboard?.writeText(BANK_ACCOUNT)} className="rounded-lg bg-[#0EA5E9] px-4 py-2 text-sm font-bold text-white hover:bg-[#0284C7]">نسخ</button>
@@ -139,7 +140,7 @@ export default function Billing() {
 
             <div className="mt-5 space-y-3">
               <input value={txnNumber} onChange={(e) => setTxnNumber(e.target.value)} placeholder="رقم المعاملة" className="w-full rounded-lg border border-black bg-white p-3 text-black outline-none" />
-              <p className="text-black">الباقة: {plan.name}، المبلغ المطلوب: {plan.price.toLocaleString()} جنيه</p>
+              <p className="text-black">الباقة: {plan.name}، المبلغ المطلوب: {formatCurrency(plan.price)}</p>
               <input type="file" accept="image/*" onChange={handleFile} className="w-full rounded-lg border border-dashed border-black bg-white p-3 text-black" />
               {preview && <img src={preview} alt="preview" className="h-52 w-full rounded-lg object-cover" />}
             </div>
@@ -147,7 +148,7 @@ export default function Billing() {
         )}
 
         {message && <p role="status" className="mt-4 rounded-lg border border-black bg-white p-3 text-sm text-black">{message}</p>}
-        <button onClick={submit} disabled={loading} className="mt-6 w-full rounded-lg bg-[#0EA5E9] px-5 py-3 font-black text-white hover:bg-[#0284C7]">{loading ? "...جاري التحديث" : isFreePlan ? "تفعيل الباقة المجانية" : `تأكيد الدفع - ${plan.price.toLocaleString()} جنيه`}</button>
+        <button onClick={submit} disabled={loading} className="mt-6 w-full rounded-lg bg-[#0EA5E9] px-5 py-3 font-black text-white hover:bg-[#0284C7]">{loading ? "...جاري التحديث" : isFreePlan ? "تفعيل الباقة المجانية" : `تأكيد الدفع - ${formatCurrency(plan.price)}`}</button>
 
         {!isFreePlan && <p className="text-xs text-center text-gray-500 mt-3">بعد التأكيد، انتظر موافقة الإدارة، وبعدها متجرك حيتفعل أوتوماتيك.</p>}
       </div>

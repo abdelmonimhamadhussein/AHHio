@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useCart } from "../components/context/CartContext";
 import { supabase } from "../lib/supabase";
 import  AiTools  from "../components/AiTools";
+import { formatCurrency } from "../lib/currency";
 
 export default function StorePage() {
   const { slug } = useParams();
@@ -111,7 +112,7 @@ export default function StorePage() {
                 <div className="p-4">
                   <h3 className="font-bold text-black">{product.name}</h3>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xl font-black text-black">{Number(product.price || 0).toLocaleString()} SDG</span>
+                    <span className="text-xl font-black text-black">{formatCurrency(product.price)}</span>
                     <button onClick={() => addToCart({ ...product, tenant_id: tenant.id, seller: tenant })} className="rounded-lg bg-[#0EA5E9] px-3 py-2 text-sm font-bold text-white hover:bg-[#0284C7]">أضف للسلة</button>
                   </div>
                 </div>

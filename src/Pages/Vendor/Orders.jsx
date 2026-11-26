@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Link } from "react-router-dom";
+import { formatCurrency } from "../../lib/currency";
 
 export default function VendorOrders() {
   const [orders, setOrders] = useState([]);
@@ -126,24 +127,24 @@ export default function VendorOrders() {
             {items.map((item, index) => (
               <div key={index} className="flex justify-between text-sm py-1">
                 <span>{item.name} x {item.qty}</span>
-                <span>{Number(item.price || 0) * Number(item.qty || 1)} جنيه</span>
+                <span>{formatCurrency(Number(item.price || 0) * Number(item.qty || 1))}</span>
               </div>
             ))}
             <div className="flex justify-between text-sm border-t mt-2 pt-2">
               <span>المجموع الفرعي</span>
-              <span>{subtotal} جنيه</span>
+              <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm py-1">
               <span>رسوم التوصيل</span>
-              <span>{deliveryFee} جنيه</span>
+              <span>{formatCurrency(deliveryFee)}</span>
             </div>
             <div className="flex justify-between text-sm py-1">
               <span>الضريبة</span>
-              <span>{tax} جنيه</span>
+              <span>{formatCurrency(tax)}</span>
             </div>
             <div className="flex justify-between font-bold border-t mt-2 pt-2">
               <span>الإجمالي</span>
-              <span>{total} جنيه</span>
+              <span>{formatCurrency(total)}</span>
             </div>
           </div>
 

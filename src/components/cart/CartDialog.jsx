@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../../lib/currency';
 
 export function CartDialog({ onClose }) {
   const { items, removeFromCart, clearCart } = useCart();
@@ -29,7 +30,7 @@ export function CartDialog({ onClose }) {
                     <p className="text-sm text-gray-500">الكمية: {item.qty}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span>{Number(item.price || 0) * Number(item.qty || 1)} جنيه</span>
+                    <span>{formatCurrency(Number(item.price || 0) * Number(item.qty || 1))}</span>
                     <button onClick={() => removeFromCart(item.id)} className="text-red-500 text-sm">حذف</button>
                   </div>
                 </div>
@@ -38,7 +39,7 @@ export function CartDialog({ onClose }) {
 
             <div className="mt-4 flex justify-between font-bold text-lg">
               <span>الإجمالي</span>
-              <span>{total} جنيه</span>
+              <span>{formatCurrency(total)}</span>
             </div>
 
             <div className="mt-4 flex gap-2">
