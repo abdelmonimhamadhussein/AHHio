@@ -8,6 +8,7 @@ export default function Register() {
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const navigate = useNavigate()
@@ -70,7 +71,12 @@ export default function Register() {
 
         <div>
           <label htmlFor="register-password" className="block mb-1">كلمة السر</label>
-          <input id="register-password" className="w-full border p-3 rounded" type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
+          <div className="relative">
+            <input id="register-password" className="w-full border p-3 rounded" type={showPassword ? "text" : "password"} value={password} onChange={e=>setPassword(e.target.value)} required />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2" aria-label={showPassword ? "إخفاء كلمة السر" : "إظهار كلمة السر"}>
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
         </div>
 
         <div className="w-full rounded-2xl border-2 border-[#00AEEF] bg-sky-50 p-6 text-center shadow-sm">
